@@ -54,36 +54,6 @@ function setupIptablesAndRouting {
     done
 }
 
-
-# start bridge and update routing for it
-function startBridge {
-    for t in $TAP; do
-        openvpn --mktun --dev $t
-    done
-
-    brctl addbr $BR
-    brctl addif $BR $ETH_IF
-
-    for t in $TAP; do
-        brctl addif $BR $t
-    done
-
-    for t in $TAP; do
-        ifconfig $t 0.0.0.0 promisc up
-        $IPTABLES_CMD -A INPUT -i $t -j ACCEPT
-    done
-
-    ifconfig $ETH_IF 0.0.0.0 promisc up
-    ifconfig $BR $ETH_IP netmask $ETH_NETMASK broadcast $ETH_BROADCAST
-	ip link set $BR address $ETH_MAC
-    # Add default route if eth is also gateway port
-    route add default gw $ETH_GATEWAY $BR
-    # allow routing
-    $IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
-    $IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
-}
-
-
 addArg "--config" "$OPENVPN/openvpn.conf"
 
 source "$OPENVPN/ovpn_env.sh"
@@ -190,13 +160,6 @@ if [ $? = 0 ]; then
     fi
 fi
 
-if [ $OVPN_DEVICE == "tap" ]; then
-    if [ -f bridge-start ]; then
-        echo "Setup ethernet bridge..."
-        #startBridge
-        echo "Setup ethernet done!!!"
-    fi
-fi
 
 echo "Running 'openvpn ${ARGS[@]} ${USER_ARGS[@]}'"
 exec openvpn ${ARGS[@]} ${USER_ARGS[@]}
