@@ -15,6 +15,9 @@ source "$OPENVPN/ovpn_env.sh"
 # Specify "nopass" as arg[2] to make the CA insecure (not recommended!)
 nopass=$1
 
+# Create empty vars file
+touch $EASYRSA_VARS_FILE
+
 # Provides a sufficient warning before erasing pre-existing files
 easyrsa init-pki
 
