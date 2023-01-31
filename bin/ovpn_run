@@ -3,6 +3,11 @@
 #
 # Run the OpenVPN server normally
 #
+# Determine which iptables command to use
+export IPTABLES_CMD=iptables
+if [ "$NFT_TABLES" == 1 ]; then
+  IPTABLES_CMD=iptables-nft
+fi
 
 if [ "$DEBUG" == "1" ]; then
   set -x
@@ -39,14 +44,43 @@ function addArg {
 # this allows rules/routing to be altered by supplying this function
 # in an included file, such as ovpn_env.sh
 function setupIptablesAndRouting {
-    iptables -t nat -C POSTROUTING -s $OVPN_SERVER -o $OVPN_NATDEVICE -j MASQUERADE 2>/dev/null || {
-      iptables -t nat -A POSTROUTING -s $OVPN_SERVER -o $OVPN_NATDEVICE -j MASQUERADE
+    $IPTABLES_CMD -t nat -C POSTROUTING -s $OVPN_SERVER -o $OVPN_NATDEVICE -j MASQUERADE 2>/dev/null || {
+      $IPTABLES_CMD -t nat -A POSTROUTING -s $OVPN_SERVER -o $OVPN_NATDEVICE -j MASQUERADE
     }
     for i in "${OVPN_ROUTES[@]}"; do
-        iptables -t nat -C POSTROUTING -s "$i" -o $OVPN_NATDEVICE -j MASQUERADE 2>/dev/null || {
-          iptables -t nat -A POSTROUTING -s "$i" -o $OVPN_NATDEVICE -j MASQUERADE
+        $IPTABLES_CMD -t nat -C POSTROUTING -s "$i" -o $OVPN_NATDEVICE -j MASQUERADE 2>/dev/null || {
+          $IPTABLES_CMD -t nat -A POSTROUTING -s "$i" -o $OVPN_NATDEVICE -j MASQUERADE
         }
     done
+}
+
+
+# start bridge and update routing for it
+function startBridge {
+    for t in $TAP; do
+        openvpn --mktun --dev $t
+    done
+
+    brctl addbr $BR
+    brctl addif $BR $ETH_IF
+
+    for t in $TAP; do
+        brctl addif $BR $t
+    done
+
+    for t in $TAP; do
+        ifconfig $t 0.0.0.0 promisc up
+        $IPTABLES_CMD -A INPUT -i $t -j ACCEPT
+    done
+
+    ifconfig $ETH_IF 0.0.0.0 promisc up
+    ifconfig $BR $ETH_IP netmask $ETH_NETMASK broadcast $ETH_BROADCAST
+	ip link set $BR address $ETH_MAC
+    # Add default route if eth is also gateway port
+    route add default gw $ETH_GATEWAY $BR
+    # allow routing
+    $IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
+    $IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
 }
 
 
@@ -59,6 +93,61 @@ if [ ! -c /dev/net/tun ]; then
     mknod /dev/net/tun c 10 200
 fi
 
+if [ $OVPN_DEVICE == "tap" ]; then
+        if [ $(ip link show | grep -c $OVPN_DEVICE$OVPN_DEVICEN:) -eq 0 ]; then
+                openvpn --mktun --dev $OVPN_DEVICE$OVPN_DEVICEN
+        fi
+		
+		ip link set $OVPN_DEVICE$OVPN_DEVICEN up
+		
+		echo 'checking if bridge needs to be added'
+		# check if bridge already exists; create if not
+		if [ $(ip link show | grep -c $BR:) -eq 0 ]; then
+                echo adding bridge
+				brctl addbr $BR
+				echo bridge added
+        fi
+		
+		# check if $ETH_IF is already added to bridge; add if not
+		echo 'checking if $ETH_IF needs to be added to $BR'
+		if [ $(brctl show $BR | grep -c $ETH_IF) -eq 0 ]; then
+                echo 'adding $ETH_IF to $BR'
+				brctl addif $BR $ETH_IF
+				echo '$ETH added to $BR'
+        fi
+		
+		echo 'checking if $OVPN_DEVICE$OVPN_DEVICEN needs to be added to $BR'
+		# check if openvpn device is already added to bridge; add if not
+		if [ $(brctl show $BR | grep -c $OVPN_DEVICE$OVPN_DEVICEN) -eq 0 ]; then
+                echo 'adding $OVPN_DEVICE$OVPN_DEVICEN needs to $BR'
+				brctl addif $BR $OVPN_DEVICE$OVPN_DEVICEN
+				echo '$OVPN_DEVICE$OVPN_DEVICEN added to $BR'
+        fi
+		
+		echo 'setting $OVPN_DEVICE$OVPN_DEVICEN to promiscous mode'
+		ifconfig $OVPN_DEVICE$OVPN_DEVICEN 0.0.0.0 promisc up
+		echo 'setting $ETH_IF to promiscous mode'
+		ifconfig $ETH_IF 0.0.0.0 promisc up
+		echo 'setting IP, subnet and broadcast address for $BR'
+		ifconfig $BR $ETH_IP netmask $ETH_NETMASK broadcast $ETH_BROADCAST
+		
+		# Add default route if eth is also gateway port
+		echo 'setting mac address for $BR'
+		ip link set $BR address $ETH_MAC
+		
+		echo 'checking if default gateway needs to be added for $BR'
+		echo ' adding default gateway for $BR'
+		if [ $(route | grep -c $BR) -eq 0 ]; then
+			route add default gw $ETH_GATEWAY $BR
+		fi
+		
+		echo 'setting ip IPTABLES'
+		$IPTABLES_CMD -A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
+		$IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
+		$IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
+		
+fi
+
 if [ -d "$OPENVPN/ccd" ]; then
     addArg "--client-config-dir" "$OPENVPN/ccd"
 fi
@@ -68,10 +157,10 @@ fi
 
 # Setup NAT forwarding if requested
 if [ "$OVPN_DEFROUTE" != "0" ] || [ "$OVPN_NAT" == "1" ] ; then
-	# call function to setup iptables rules and routing
-	# this allows rules to be customized by supplying
-	# a replacement function in, for example, ovpn_env.sh
-	setupIptablesAndRouting
+    # call function to setup iptables rules and routing
+    # this allows rules to be customized by supplying
+    # a replacement function in, for example, ovpn_env.sh
+    setupIptablesAndRouting
 fi
 
 # Use a copy of crl.pem as the CRL Needs to be readable by the user/group
@@ -98,6 +187,14 @@ if [ $? = 0 ]; then
 
     if [ "$(</proc/sys/net/ipv6/conf/all/forwarding)" != "1" ]; then
         echo "Sysctl error for all forwarding, please run docker with '--sysctl net.ipv6.conf.all.forwarding=1'"
+    fi
+fi
+
+if [ $OVPN_DEVICE == "tap" ]; then
+    if [ -f bridge-start ]; then
+        echo "Setup ethernet bridge..."
+        #startBridge
+        echo "Setup ethernet done!!!"
     fi
 fi
 
