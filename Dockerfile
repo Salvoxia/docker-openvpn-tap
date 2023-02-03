@@ -1,9 +1,11 @@
-# Original credit: https://github.com/jpetazzo/dockvpn
+# Primary credit: https://github.com/jpetazzo/dockvpn
+# Secondary credit: https://github.com/jpetazzo/dockvpn
+# Tertiary credit for TAP/bridge adjusments: https://github.com/aktur/docker-openvpn
 
 # Smallest base image
 FROM alpine:latest
 
-LABEL maintainer="Kyle Manna <kyle@kylemanna.com>"
+LABEL maintainer="Salvoxia <salvoxia@blindfish.info>"
 
 # Testing: pamtester
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories && \
@@ -19,8 +21,9 @@ ENV EASYRSA=/usr/share/easy-rsa \
 
 VOLUME ["/etc/openvpn"]
 
-# Internally uses port 1194/udp, remap using `docker run -p 443:1194/tcp`
-EXPOSE 1194/udp
+# Removed EXPOSE command, since the new configuration will let openVPN server listen on any port, and 
+# NAT for UDP might be problematic and not work in some environments. Not required at all for bridged setup,
+# since the container needs to run in host mode anyway. Use the -p argument for publishing the correct port mapping.
 
 CMD ["ovpn_run"]
 
