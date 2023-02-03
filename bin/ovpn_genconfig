@@ -14,20 +14,20 @@ set -eu
 _showed_traceback=f
 
 traceback() {
-	# Hide the traceback() call.
-	local -i start=$(( ${1:-0} + 1 ))
-	local -i end=${#BASH_SOURCE[@]}
-	local -i i=0
-	local -i j=0
+    # Hide the traceback() call.
+    local -i start=$(( ${1:-0} + 1 ))
+    local -i end=${#BASH_SOURCE[@]}
+    local -i i=0
+    local -i j=0
 
-	echo "Traceback (last called is first):" 1>&2
-	for ((i=${start}; i < ${end}; i++)); do
-		j=$(( $i - 1 ))
-		local function="${FUNCNAME[$i]}"
-		local file="${BASH_SOURCE[$i]}"
-		local line="${BASH_LINENO[$j]}"
-		echo "     ${function}() in ${file}:${line}" 1>&2
-	done
+    echo "Traceback (last called is first):" 1>&2
+    for ((i=${start}; i < ${end}; i++)); do
+        j=$(( $i - 1 ))
+        local function="${FUNCNAME[$i]}"
+        local file="${BASH_SOURCE[$i]}"
+        local line="${BASH_LINENO[$j]}"
+        echo "     ${function}() in ${file}:${line}" 1>&2
+    done
 }
 
 on_error() {
@@ -209,10 +209,10 @@ do
     case "$1" in
         -a)
             shift
-			OVPN_AUTH="$1"
+            OVPN_AUTH="$1"
             ;;
         -e)
-			shift
+            shift
             mapfile -t TMP_EXTRA_SERVER_CONFIG <<< "$1"
             for i in "${TMP_EXTRA_SERVER_CONFIG[@]}"; do
               OVPN_EXTRA_SERVER_CONFIG+=("$i")
@@ -220,28 +220,28 @@ do
             ;;
         -E)
             shift
-			mapfile -t TMP_EXTRA_CLIENT_CONFIG <<< "$1"
+            mapfile -t TMP_EXTRA_CLIENT_CONFIG <<< "$1"
             for i in "${TMP_EXTRA_CLIENT_CONFIG[@]}"; do
               OVPN_EXTRA_CLIENT_CONFIG+=("$i")
             done
             ;;
         -C)
-			shift
+            shift
             OVPN_CIPHER="$1"
             ;;
         -T)
             shift
-			OVPN_TLS_CIPHER="$1"
+            OVPN_TLS_CIPHER="$1"
             ;;
         -r)
             shift
-			mapfile -t TMP_ROUTES <<< "$1"
+            mapfile -t TMP_ROUTES <<< "$1"
             for i in "${TMP_ROUTES[@]}"; do
               OVPN_ROUTES+=("$i")
             done
             ;;
         -s)
-			shift
+            shift
             OVPN_SERVER="$1"
             ;;
         -d)
@@ -249,7 +249,7 @@ do
             OVPN_DISABLE_PUSH_BLOCK_DNS=1
             ;;
         -u)
-			shift
+            shift
             OVPN_SERVER_URL="$1"
             ;;
         -b)
@@ -259,14 +259,14 @@ do
             OVPN_CLIENT_TO_CLIENT=1
             ;;
         -p)
-			shift
+            shift
             mapfile -t TMP_PUSH <<< "$1"
             for i in "${TMP_PUSH[@]}"; do
               OVPN_PUSH+=("$i")
             done
             ;;
         -n)
-			shift
+            shift
             mapfile -t TMP_DNS_SERVERS <<< "$1"
             for i in "${TMP_DNS_SERVERS[@]}"; do
               OVPN_DNS_SERVERS+=("$i")
@@ -279,11 +279,11 @@ do
             OVPN_NAT=1
             ;;
         -k)
-			shift
+            shift
             OVPN_KEEPALIVE="$1"
             ;;
         -m)
-			shift
+            shift
             OVPN_MTU="$1"
             ;;
         -t)
@@ -296,11 +296,11 @@ do
             OVPN_OTP_AUTH=1
             ;;
         -f)
-			shift
+            shift
             OVPN_FRAGMENT="$1"
             ;;
         -\?)
-			shift
+            shift
             set +x
             echo "Invalid option: -$1" >&2
             usage
@@ -308,56 +308,56 @@ do
             ;;
         -:)
             shift
-			set +x
+            set +x
             echo "Option -$1 requires an argument." >&2
             usage
             exit 1
             ;;
-		-B)
+        -B)
             OVPN_USE_BRIDGE=1
             ;;
-		--bridge-name)
-			shift
-			OVPN_BR_BR="$1"
-			;;
-		--bridge-eth-if)
-			shift
-			OVPN_BR_ETH_IF="$1"
-			;;
-		--bridge-eth-ip)
-			shift
-			OVPN_BR_ETH_IP="$1"
-			;;
-		--bridge-eth-subnet)
-			shift
-			OVPN_BR_ETH_SUBNET="$1"
-			;;
-		--bridge-eth-broadcast)
-			shift
-			OVPN_BR_ETH_BROADCAST="$1"
-			;;
-		--bridge-eth-gateway)
-			shift
-			OVPN_BR_ETH_GATEWAY="$1"
-			;;
-		--bridge-eth-mac)
-			shift
-			OVPN_BR_ETH_MAC="$1"
-			;;
-		--bridge-dhcp-start)
-			shift
-			OVPN_BR_DHCP_START="$1"
-			;;
-		--bridge-dhcp-end)
-			shift
-			OVPN_BR_DHCP_END="$1"
-			;;
-		--) 
-			shift
-			break
-			;;
+        --bridge-name)
+            shift
+            OVPN_BR_BR="$1"
+            ;;
+        --bridge-eth-if)
+            shift
+            OVPN_BR_ETH_IF="$1"
+            ;;
+        --bridge-eth-ip)
+            shift
+            OVPN_BR_ETH_IP="$1"
+            ;;
+        --bridge-eth-subnet)
+            shift
+            OVPN_BR_ETH_SUBNET="$1"
+            ;;
+        --bridge-eth-broadcast)
+            shift
+            OVPN_BR_ETH_BROADCAST="$1"
+            ;;
+        --bridge-eth-gateway)
+            shift
+            OVPN_BR_ETH_GATEWAY="$1"
+            ;;
+        --bridge-eth-mac)
+            shift
+            OVPN_BR_ETH_MAC="$1"
+            ;;
+        --bridge-dhcp-start)
+            shift
+            OVPN_BR_DHCP_START="$1"
+            ;;
+        --bridge-dhcp-end)
+            shift
+            OVPN_BR_DHCP_END="$1"
+            ;;
+        --) 
+            shift
+            break
+            ;;
     esac
-	shift
+    shift
 done
 
 # Create ccd directory for static routes
@@ -376,14 +376,14 @@ else
 fi
 # check for completeness of bridge parameters, if used
 if [ "${OVPN_USE_BRIDGE}" == "1" ]; then
-	# check if all $OVPN_BR_... arguments are provided
-	(set | grep -Eo '^OVPN_BR_[A-Z_]+') | while read -r BRIDGE_ARG; do
-		if [ -z "${!BRIDGE_ARG}" ]; then
-			echo "If '-B' is specified, all bridge-related arguments must be provided!'"
+    # check if all $OVPN_BR_... arguments are provided
+    (set | grep -Eo '^OVPN_BR_[A-Z_]+') | while read -r BRIDGE_ARG; do
+        if [ -z "${!BRIDGE_ARG}" ]; then
+            echo "If '-B' is specified, all bridge-related arguments must be provided!'"
             usage
-			exit 1
-		fi
-	done
+            exit 1
+        fi
+    done
 fi
 
 # Apply defaults. If dns servers were not defined with -n, use google nameservers
