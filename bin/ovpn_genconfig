@@ -104,6 +104,18 @@ usage() {
     echo " -t    Use TAP device (instead of TUN device)"
     echo " -T    Encrypt packets with the given cipher algorithm instead of the default one (tls-cipher)."
     echo " -z    Enable comp-lzo compression."
+    echo " -B    Start a network bridge for TAP mode and use \"server-bridge\" directive in OpenVPN server config;"
+    echo "       all bridge related arguments  are required if set!"
+    echo "Bridge related arguments:"
+    echo " --bridge-name          Name of the network bridge, e.g. br0"
+    echo " --bridge-eth-if        Name of the network interface to bridge, e.g. eth0"
+    echo " --bridge-eth-ip        IP addresss to assign to the bridge"
+    echo " --bridge-eth-broadcast Broadcast address to apply to the bridge"
+    echo " --bridge-eth-subnet    Subnetmask to apply to the bridge"
+    echo " --bridge-eth-gateway   Default gateway to set for the bridge"
+    echo " --bridge-eth-mac       MAC Address to apply to the bridge interface"
+    echo " --bridge-dhcp-start    Starting IP for the OpenVPN server's DHCP pool"
+    echo " --bridge-dhcp-end      Ending IP for the OpenVPN server's DHCP pool"
 }
 
 process_route_config() {
@@ -167,105 +179,185 @@ OVPN_ROUTES=()
 OVPN_SERVER=192.168.255.0/24
 OVPN_SERVER_URL=''
 OVPN_TLS_CIPHER=''
+# bridge related options
+OVPN_USE_BRIDGE=0
+OVPN_BR_BR=''
+OVPN_BR_ETH_IF=''
+OVPN_BR_ETH_IP=''
+OVPN_BR_ETH_SUBNET=''
+OVPN_BR_ETH_BROADCAST=''
+OVPN_BR_ETH_GATEWAY=''
+OVPN_BR_ETH_MAC=''
+OVPN_BR_DHCP_START=''
+OVPN_BR_DHCP_END=''
+
 
 # Import existing configuration if present
 [ -r "$OVPN_ENV" ] && source "$OVPN_ENV"
 
 # Parse arguments
-while getopts ":a:e:E:C:T:r:s:du:bcp:n:k:DNm:f:tz2" opt; do
-    case $opt in
-        a)
-            OVPN_AUTH="$OPTARG"
+PARSED_ARGUMENTS=$(getopt -l "bridge-name:,bridge-eth-if:,bridge-eth-ip:,bridge-eth-subnet:,bridge-eth-broadcast:,bridge-eth-gateway:,bridge-eth-mac:,bridge-dhcp-start:,bridge-dhcp-end:" -o ":a:e:E:C:T:r:s:du:bcp:n:k:DNm:f:tz2B" -- "$@")
+VALID_ARGUMENTS=$?
+if [ "$VALID_ARGUMENTS" != "0" ]; then
+  usage
+fi
+
+eval set -- "$PARSED_ARGUMENTS"
+
+while :
+do
+    case "$1" in
+        -a)
+            shift
+			OVPN_AUTH="$1"
             ;;
-        e)
-            mapfile -t TMP_EXTRA_SERVER_CONFIG <<< "$OPTARG"
+        -e)
+			shift
+            mapfile -t TMP_EXTRA_SERVER_CONFIG <<< "$1"
             for i in "${TMP_EXTRA_SERVER_CONFIG[@]}"; do
               OVPN_EXTRA_SERVER_CONFIG+=("$i")
             done
             ;;
-        E)
-            mapfile -t TMP_EXTRA_CLIENT_CONFIG <<< "$OPTARG"
+        -E)
+            shift
+			mapfile -t TMP_EXTRA_CLIENT_CONFIG <<< "$1"
             for i in "${TMP_EXTRA_CLIENT_CONFIG[@]}"; do
               OVPN_EXTRA_CLIENT_CONFIG+=("$i")
             done
             ;;
-        C)
-            OVPN_CIPHER="$OPTARG"
+        -C)
+			shift
+            OVPN_CIPHER="$1"
             ;;
-        T)
-            OVPN_TLS_CIPHER="$OPTARG"
+        -T)
+            shift
+			OVPN_TLS_CIPHER="$1"
             ;;
-        r)
-            mapfile -t TMP_ROUTES <<< "$OPTARG"
+        -r)
+            shift
+			mapfile -t TMP_ROUTES <<< "$1"
             for i in "${TMP_ROUTES[@]}"; do
               OVPN_ROUTES+=("$i")
             done
             ;;
-        s)
-            OVPN_SERVER="$OPTARG"
+        -s)
+			shift
+            OVPN_SERVER="$1"
             ;;
-        d)
+        -d)
             OVPN_DEFROUTE=0
             OVPN_DISABLE_PUSH_BLOCK_DNS=1
             ;;
-        u)
-            OVPN_SERVER_URL="$OPTARG"
+        -u)
+			shift
+            OVPN_SERVER_URL="$1"
             ;;
-        b)
+        -b)
             OVPN_DISABLE_PUSH_BLOCK_DNS=1
             ;;
-        c)
+        -c)
             OVPN_CLIENT_TO_CLIENT=1
             ;;
-        p)
-            mapfile -t TMP_PUSH <<< "$OPTARG"
+        -p)
+			shift
+            mapfile -t TMP_PUSH <<< "$1"
             for i in "${TMP_PUSH[@]}"; do
               OVPN_PUSH+=("$i")
             done
             ;;
-        n)
-            mapfile -t TMP_DNS_SERVERS <<< "$OPTARG"
+        -n)
+			shift
+            mapfile -t TMP_DNS_SERVERS <<< "$1"
             for i in "${TMP_DNS_SERVERS[@]}"; do
               OVPN_DNS_SERVERS+=("$i")
             done
             ;;
-        D)
+        -D)
             OVPN_DNS=0
             ;;
-        N)
+        -N)
             OVPN_NAT=1
             ;;
-        k)
-            OVPN_KEEPALIVE="$OPTARG"
+        -k)
+			shift
+            OVPN_KEEPALIVE="$1"
             ;;
-        m)
-            OVPN_MTU="$OPTARG"
+        -m)
+			shift
+            OVPN_MTU="$1"
             ;;
-        t)
+        -t)
             OVPN_DEVICE="tap"
             ;;
-        z)
+        -z)
             OVPN_COMP_LZO=1
             ;;
-        2)
+        -2)
             OVPN_OTP_AUTH=1
             ;;
-        f)
-            OVPN_FRAGMENT="$OPTARG"
+        -f)
+			shift
+            OVPN_FRAGMENT="$1"
             ;;
-        \?)
+        -\?)
+			shift
             set +x
-            echo "Invalid option: -$OPTARG" >&2
+            echo "Invalid option: -$1" >&2
             usage
             exit 1
             ;;
-        :)
-            set +x
-            echo "Option -$OPTARG requires an argument." >&2
+        -:)
+            shift
+			set +x
+            echo "Option -$1 requires an argument." >&2
             usage
             exit 1
             ;;
+		-B)
+            OVPN_USE_BRIDGE=1
+            ;;
+		--bridge-name)
+			shift
+			OVPN_BR_BR="$1"
+			;;
+		--bridge-eth-if)
+			shift
+			OVPN_BR_ETH_IF="$1"
+			;;
+		--bridge-eth-ip)
+			shift
+			OVPN_BR_ETH_IP="$1"
+			;;
+		--bridge-eth-subnet)
+			shift
+			OVPN_BR_ETH_SUBNET="$1"
+			;;
+		--bridge-eth-broadcast)
+			shift
+			OVPN_BR_ETH_BROADCAST="$1"
+			;;
+		--bridge-eth-gateway)
+			shift
+			OVPN_BR_ETH_GATEWAY="$1"
+			;;
+		--bridge-eth-mac)
+			shift
+			OVPN_BR_ETH_MAC="$1"
+			;;
+		--bridge-dhcp-start)
+			shift
+			OVPN_BR_DHCP_START="$1"
+			;;
+		--bridge-dhcp-end)
+			shift
+			OVPN_BR_DHCP_END="$1"
+			;;
+		--) 
+			shift
+			break
+			;;
     esac
+	shift
 done
 
 # Create ccd directory for static routes
@@ -281,6 +373,17 @@ else
     echo "Common name not specified, see '-u'"
     usage
     exit 1
+fi
+# check for completeness of bridge parameters, if used
+if [ "${OVPN_USE_BRIDGE}" == "1" ]; then
+	# check if all $OVPN_BR_... arguments are provided
+	(set | grep -Eo '^OVPN_BR_[A-Z_]+') | while read -r BRIDGE_ARG; do
+		if [ -z "${!BRIDGE_ARG}" ]; then
+			echo "If '-B' is specified, all bridge-related arguments must be provided!'"
+            usage
+			exit 1
+		fi
+	done
 fi
 
 # Apply defaults. If dns servers were not defined with -n, use google nameservers
@@ -317,8 +420,13 @@ if [ ${#OVPN_EXTRA_CLIENT_CONFIG[@]} -gt 0 ]; then
   done
 fi
 
+SERVER_DIRECTIVE="server $(getroute $OVPN_SERVER)"
+if [ "${OVPN_USE_BRIDGE}" == "1" ]; then
+    SERVER_DIRECTIVE="server-bridge $(getroute $OVPN_SERVER) $OVPN_BR_ETH_SUBNET $OVPN_BR_DHCP_START $OVPN_BR_DHCP_END"
+fi
+
 cat > "$conf" <<EOF
-server $(getroute $OVPN_SERVER)
+$SERVER_DIRECTIVE
 verb 3
 key $EASYRSA_PKI/private/${OVPN_CN}.key
 ca $EASYRSA_PKI/ca.crt
@@ -331,8 +439,7 @@ persist-key
 persist-tun
 
 proto $OVPN_PROTO
-# Rely on Docker to do port mapping, internally always 1194
-port 1194
+port $OVPN_PORT
 dev $OVPN_DEVICE$OVPN_DEVICEN
 status /tmp/openvpn-status.log
 
