@@ -67,55 +67,55 @@ if [ $OVPN_DEVICE == "tap" ]; then
         if [ $(ip link show | grep -c $OVPN_DEVICE$OVPN_DEVICEN:) -eq 0 ]; then
                 openvpn --mktun --dev $OVPN_DEVICE$OVPN_DEVICEN
         fi
-		
-		ip link set $OVPN_DEVICE$OVPN_DEVICEN up
-		
-		echo 'checking if bridge needs to be added'
-		# check if bridge already exists; create if not
-		if [ $(ip link show | grep -c $BR:) -eq 0 ]; then
+        
+        ip link set $OVPN_DEVICE$OVPN_DEVICEN up
+        
+        echo 'checking if bridge needs to be added'
+        # check if bridge already exists; create if not
+        if [ $(ip link show | grep -c $BR:) -eq 0 ]; then
                 echo adding bridge
-				brctl addbr $BR
-				echo bridge added
+                brctl addbr $BR
+                echo bridge added
         fi
-		
-		# check if $ETH_IF is already added to bridge; add if not
-		echo 'checking if $ETH_IF needs to be added to $BR'
-		if [ $(brctl show $BR | grep -c $ETH_IF) -eq 0 ]; then
+        
+        # check if $ETH_IF is already added to bridge; add if not
+        echo 'checking if $ETH_IF needs to be added to $BR'
+        if [ $(brctl show $BR | grep -c $ETH_IF) -eq 0 ]; then
                 echo 'adding $ETH_IF to $BR'
-				brctl addif $BR $ETH_IF
-				echo '$ETH added to $BR'
+                brctl addif $BR $ETH_IF
+                echo '$ETH added to $BR'
         fi
-		
-		echo 'checking if $OVPN_DEVICE$OVPN_DEVICEN needs to be added to $BR'
-		# check if openvpn device is already added to bridge; add if not
-		if [ $(brctl show $BR | grep -c $OVPN_DEVICE$OVPN_DEVICEN) -eq 0 ]; then
+        
+        echo 'checking if $OVPN_DEVICE$OVPN_DEVICEN needs to be added to $BR'
+        # check if openvpn device is already added to bridge; add if not
+        if [ $(brctl show $BR | grep -c $OVPN_DEVICE$OVPN_DEVICEN) -eq 0 ]; then
                 echo 'adding $OVPN_DEVICE$OVPN_DEVICEN needs to $BR'
-				brctl addif $BR $OVPN_DEVICE$OVPN_DEVICEN
-				echo '$OVPN_DEVICE$OVPN_DEVICEN added to $BR'
+                brctl addif $BR $OVPN_DEVICE$OVPN_DEVICEN
+                echo '$OVPN_DEVICE$OVPN_DEVICEN added to $BR'
         fi
-		
-		echo 'setting $OVPN_DEVICE$OVPN_DEVICEN to promiscous mode'
-		ifconfig $OVPN_DEVICE$OVPN_DEVICEN 0.0.0.0 promisc up
-		echo 'setting $ETH_IF to promiscous mode'
-		ifconfig $ETH_IF 0.0.0.0 promisc up
-		echo 'setting IP, subnet and broadcast address for $BR'
-		ifconfig $BR $ETH_IP netmask $ETH_NETMASK broadcast $ETH_BROADCAST
-		
-		# Add default route if eth is also gateway port
-		echo 'setting mac address for $BR'
-		ip link set $BR address $ETH_MAC
-		
-		echo 'checking if default gateway needs to be added for $BR'
-		echo ' adding default gateway for $BR'
-		if [ $(route | grep -c $BR) -eq 0 ]; then
-			route add default gw $ETH_GATEWAY $BR
-		fi
-		
-		echo 'setting ip IPTABLES'
-		$IPTABLES_CMD -A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
-		$IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
-		$IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
-		
+        
+        echo 'setting $OVPN_DEVICE$OVPN_DEVICEN to promiscous mode'
+        ifconfig $OVPN_DEVICE$OVPN_DEVICEN 0.0.0.0 promisc up
+        echo 'setting $ETH_IF to promiscous mode'
+        ifconfig $ETH_IF 0.0.0.0 promisc up
+        echo 'setting IP, subnet and broadcast address for $BR'
+        ifconfig $BR $ETH_IP netmask $ETH_NETMASK broadcast $ETH_BROADCAST
+        
+        # Add default route if eth is also gateway port
+        echo 'setting mac address for $BR'
+        ip link set $BR address $ETH_MAC
+        
+        echo 'checking if default gateway needs to be added for $BR'
+        echo ' adding default gateway for $BR'
+        if [ $(route | grep -c $BR) -eq 0 ]; then
+            route add default gw $ETH_GATEWAY $BR
+        fi
+        
+        echo 'setting ip IPTABLES'
+        $IPTABLES_CMD -A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
+        $IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
+        $IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
+        
 fi
 
 if [ -d "$OPENVPN/ccd" ]; then
