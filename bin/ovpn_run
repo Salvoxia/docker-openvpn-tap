@@ -107,15 +107,22 @@ if [ $OVPN_DEVICE == "tap" ]; then
         
         echo 'checking if default gateway needs to be added for $BR'
         echo ' adding default gateway for $BR'
-        if [ $(route | grep -c $BR) -eq 0 ]; then
+        if [ $(route | grep -c -Eo "^default\s+$ETH_GATEWAY.+$BR$") -eq 0 ]; then
             route add default gw $ETH_GATEWAY $BR
         fi
         
-        echo 'setting ip IPTABLES'
-        $IPTABLES_CMD -A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
-        $IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
-        $IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
-        
+        echo 'setting up IPTABLES'
+        # check if entry already exists before adding
+        if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT") -eq 0 ]; then
+           
+           $IPTABLES_CMD -A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
+        fi
+        if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $BR -j ACCEPT") -eq 0 ]; then
+            $IPTABLES_CMD -A INPUT -i $BR -j ACCEPT
+        fi
+        if [ $($IPTABLES_CMD -S | grep -c -- "-A FORWARD -i $BR -j ACCEPT") -eq 0 ]; then
+            $IPTABLES_CMD -A FORWARD -i $BR -j ACCEPT
+        fi
 fi
 
 if [ -d "$OPENVPN/ccd" ]; then
