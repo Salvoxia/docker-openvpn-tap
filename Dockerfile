@@ -3,7 +3,9 @@
 # Tertiary credit for TAP/bridge adjusments: https://github.com/aktur/docker-openvpn
 
 # Smallest base image
-FROM alpine:latest
+# Alpine image 3.17 has a weird issue with easy-rsa and openssl versions not playing nice (asking for a PEM password when creating CA
+# Use Alpine image 3.16 for now
+FROM alpine:3.16
 
 LABEL maintainer="Salvoxia <salvoxia@blindfish.info>"
 
