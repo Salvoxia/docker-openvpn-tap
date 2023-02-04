@@ -5,7 +5,7 @@ OpenVPN server in a Docker container complete with an EasyRSA PKI CA, modified f
 ## Disclaimer
 * Primary credit: [jpetazzo/dockvpn](https://github.com/jpetazzo/dockvpn)
 * Secondary credit (on which this is a fork): [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn)
-* Tertiary credit (tap and bridge support principles): [https://github.com/aktur/docker-openvpn](aktur/docker-openvpn)
+* Tertiary credit (tap and bridge support principles): [aktur/docker-openvpn](https://github.com/aktur/docker-openvpn)
 
 This image was modified for my own private use with my homelab. 
 It was modified to support tap mode and network bridging out-of-the-box without the need of any additional or manual modifications.
