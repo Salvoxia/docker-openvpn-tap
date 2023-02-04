@@ -1,21 +1,33 @@
 # OpenVPN for Docker
 
-[![Build Status](https://travis-ci.org/kylemanna/docker-openvpn.svg)](https://travis-ci.org/kylemanna/docker-openvpn)
-[![Docker Stars](https://img.shields.io/docker/stars/kylemanna/openvpn.svg)](https://hub.docker.com/r/kylemanna/openvpn/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/kylemanna/openvpn.svg)](https://hub.docker.com/r/kylemanna/openvpn/)
-[![ImageLayers](https://images.microbadger.com/badges/image/kylemanna/openvpn.svg)](https://microbadger.com/#/images/kylemanna/openvpn)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn?ref=badge_shield)
+OpenVPN server in a Docker container complete with an EasyRSA PKI CA, modified for TAP and bridge support
+
+## Disclaimer
+* Primary credit: [jpetazzo/dockvpn](https://github.com/jpetazzo/dockvpn)
+* Secondary credit (on which this is a fork): [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn)
+* Tertiary credit (tap and bridge support principles): [https://github.com/aktur/docker-openvpn](aktur/docker-openvpn)
+
+This image was modified for my own private use with my homelab. 
+It was modified to support tap mode and network bridging out-of-the-box without the need of any additional or manual modifications.
+Unlike the image this is image is based on, it is not tested extensively with different network setups, host architectures or VPN configurations. It works the way I use it. 
 
 
-OpenVPN server in a Docker container complete with an EasyRSA PKI CA.
+#### Cheat Sheet
+ * __Build:__ docker ```build -t salvoxia/openvpn-tap:latest .```
+ * __Build Multi-Arch (buildx)__ ```docker build --platform linux/arm/v7,linux/arm64/v8,linux/amd64 -t salvoxia/openvpn-tap:latest .```
 
-Extensively tested on [Digital Ocean $5/mo node](http://bit.ly/1C7cKr3) and has
-a corresponding [Digital Ocean Community Tutorial](http://bit.ly/1AGUZkq).
+#### Environment Variables
+| Environment varible     | Description                                                                                                                 |
+| :------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| DEBUG               | Set to 1 to enable debugging output                                                                                         |
+| NFT_TABLES          | Set to 1 to use `iptables-nft` command instead of legacy `iptables` command for setting up ACCEPT and FORWARD rules <br> Use this if you intend to set up a bridge and your host uses the new iptables-nft. |
+
 
 #### Upstream Links
 
-* Docker Registry @ [kylemanna/openvpn](https://hub.docker.com/r/kylemanna/openvpn/)
-* GitHub @ [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn)
+* Docker Registry @ [salvoxia/openvpn-tap](https://hub.docker.com/r/salvoxia/openvpn-tap/)
+* GitHub @ [salvoxia/docker-openvpn-tap](https://github.com/salvoxia/docker-openvpn-tap)
+
 
 ## Quick Start
 
@@ -31,20 +43,53 @@ a corresponding [Digital Ocean Community Tutorial](http://bit.ly/1AGUZkq).
   private key used by the newly generated certificate authority.
 
       docker volume create --name $OVPN_DATA
-      docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM
-      docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki
+      docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_genconfig -u udp://VPN.SERVERNAME.COM
+      docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap ovpn_initpki
 
 * Start OpenVPN server process
 
-      docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN kylemanna/openvpn
+      docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN salvoxia/openvpn-tap
 
 * Generate a client certificate without a passphrase
 
-      docker run -v $OVPN_DATA:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full CLIENTNAME nopass
+      docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap easyrsa build-client-full CLIENTNAME nopass
 
 * Retrieve the client configuration with embedded certificates
 
-      docker run -v $OVPN_DATA:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient CLIENTNAME > CLIENTNAME.ovpn
+      docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_getclient CLIENTNAME > CLIENTNAME.ovpn
+
+## TAP and bridge support
+
+This image has been modified to work with tap mode and support network bridging out-of-the-box.
+You must start the container with host networking mode.
+
+To set up a server using tap and bridging, use the `-B` argument when creating the configuration. You must supply all bridge-related arguments as well:
+
+      docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap \
+        ovpn_genconfig \
+            -u udp://VPN.SERVERNAME.COM:PORT \
+            -t
+            -B
+            --bridge-name 'br0' \
+            --bridge-eth-if 'eth0' \
+            --bridge-eth-ip '192.168.0.199' \
+            --bridge-eth-subnet '255.255.255.0' \
+            --bridge-eth-broadcast '192.168.0.255' \
+            --bridge-eth-gateway '192.168.0.1' \
+            --bridge-eth-mac 'b8:32:ac:8b:17:2e' \
+            --bridge-dhcp-start '192.168.0.200' \
+            --bridge-dhcp-end '192.168.0.220'
+
+Then start the server with host networking mode:
+      
+      docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN salvoxia/openvpn-tap
+
+Make sure to set choose the correct `iptables` command, otherwise routing might not work (refer to [Environment Variables](#environment-variables).
+To use `iptables-nft`, start the container like this:
+
+      docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN -e NFT_TABLES=1 salvoxia/openvpn-tap
+      
+⚠️ __Attention__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
 
 ## Next Steps
 
@@ -69,7 +114,7 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 
 * Create an environment variable with the name DEBUG and value of 1 to enable debug output (using "docker -e").
 
-        docker run -v $OVPN_DATA:/etc/openvpn -p 1194:1194/udp --cap-add=NET_ADMIN -e DEBUG=1 kylemanna/openvpn
+        docker run -v $OVPN_DATA:/etc/openvpn -p 1194:1194/udp --cap-add=NET_ADMIN -e DEBUG=1 salvoxia/openvpn-tap
 
 * Test using a client that has openvpn installed correctly
 
@@ -87,7 +132,7 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 
 ## How Does It Work?
 
-Initialize the volume container using the `kylemanna/openvpn` image with the
+Initialize the volume container using the `salvoxia/openvpn-tap` image with the
 included scripts to automatically generate:
 
 - Diffie-Hellman parameters
@@ -103,11 +148,11 @@ declares that directory as a volume. It means that you can start another
 container with the `-v` argument, and access the configuration.
 The volume also holds the PKI keys and certs so that it could be backed up.
 
-To generate a client certificate, `kylemanna/openvpn` uses EasyRSA via the
+To generate a client certificate, `salvoxia/openvpn-tap` uses EasyRSA via the
 `easyrsa` command in the container's path.  The `EASYRSA_*` environmental
 variables place the PKI CA under `/etc/openvpn/pki`.
 
-Conveniently, `kylemanna/openvpn` comes with a script called `ovpn_getclient`,
+Conveniently, `salvoxia/openvpn-tap` comes with a script called `ovpn_getclient`,
 which dumps an inline OpenVPN client configuration file.  This single file can
 then be given to a client for access to the VPN.
 
@@ -115,12 +160,7 @@ To enable Two Factor Authentication for clients (a.k.a. OTP) see [this document]
 
 ## OpenVPN Details
 
-We use `tun` mode, because it works on the widest range of devices.
-`tap` mode, for instance, does not work on Android, except if the device
-is rooted.
-
-The topology used is `net30`, because it works on the widest range of OS.
-`p2p`, for instance, does not work on Windows.
+You can choose between `tun` and `tap` mode when generating the OpenVPN server configuration by (not) setting the `-t` flag when running `ovpn_genconfig`.
 
 The UDP server uses`192.168.255.0/24` for dynamic clients by default.
 
@@ -173,7 +213,7 @@ OpenVPN with latest OpenSSL on Ubuntu 12.04 LTS).
 ### It Doesn't Stomp All Over the Server's Filesystem
 
 Everything for the Docker container is contained in two images: the ephemeral
-run time image (kylemanna/openvpn) and the `$OVPN_DATA` data volume. To remove
+run time image (salvoxia/openvpn-tap) and the `$OVPN_DATA` data volume. To remove
 it, remove the corresponding containers, `$OVPN_DATA` data volume and Docker
 image and it's completely removed.  This also makes it easier to run multiple
 servers since each lives in the bubble of the container (of course multiple IPs
@@ -198,13 +238,11 @@ of a guarantee in the future.
 ## Originally Tested On
 
 * Docker hosts:
-  * server a [Digital Ocean](https://www.digitalocean.com/?refcode=d19f7fe88c94) Droplet with 512 MB RAM running Ubuntu 14.04
+  * RaspberryPI 3B+ running Raspbian arm64 with kernel 5.15.61
 * Clients
-  * Android App OpenVPN Connect 1.1.14 (built 56)
-     * OpenVPN core 3.0 android armv7a thumb2 32-bit
-  * OS X Mavericks with Tunnelblick 3.4beta26 (build 3828) using openvpn-2.3.4
-  * ArchLinux OpenVPN pkg 2.3.4-1
+  * Windows OpenVPN Client 2.5.7 (64bit) 
+  * Android App VPN Client Pro (supports TAP with rooting the device)
 
 
-## License
+## Original License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn?ref=badge_large)
