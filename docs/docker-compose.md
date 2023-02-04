@@ -2,13 +2,14 @@
 
 * Add a new service in docker-compose.yml
 
+__TUN__
 ```yaml
 version: '2'
 services:
   openvpn:
     cap_add:
      - NET_ADMIN
-    image: kylemanna/openvpn
+    image: salvoxia/openvpn-tap
     container_name: openvpn
     ports:
      - "1194:1194/udp"
@@ -17,11 +18,49 @@ services:
      - ./openvpn-data/conf:/etc/openvpn
 ```
 
+__TAP with bridging__
 
-* Initialize the configuration files and certificates
+Make sure to select the correct `iptables` command. Use host networking.
+```yaml
+version: '2'
+services:
+  openvpn:
+    cap_add:
+     - NET_ADMIN
+    image: salvoxia/openvpn-tap
+    container_name: openvpn
+    network_mode: host
+    restart: always
+    volumes:
+     - ./openvpn-data/conf:/etc/openvpn
+     environment:
+          - NFT_TABLES={$NFT_TABLES:-1}
+```
+* Initialize the configuration files
 
+__TUN__
 ```bash
 docker-compose run --rm openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM
+```
+
+__TAP with bridging__
+```bash
+docker-compose run --rm openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM:PORT \
+    -t
+    -B
+    --bridge-name 'br0' \
+    --bridge-eth-if 'eth0' \
+    --bridge-eth-ip '192.168.0.199' \
+    --bridge-eth-subnet '255.255.255.0' \
+    --bridge-eth-broadcast '192.168.0.255' \
+    --bridge-eth-gateway '192.168.0.1' \
+    --bridge-eth-mac 'b8:32:ac:8b:17:2e' \
+    --bridge-dhcp-start '192.168.0.200' \
+    --bridge-dhcp-end '192.168.0.220'
+```
+
+* Initialize certificates
+```bash
 docker-compose run --rm openvpn ovpn_initpki
 ```
 
