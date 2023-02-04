@@ -17,7 +17,7 @@ Unlike the image this is image is based on, it is not tested extensively with di
  * __Build Multi-Arch (buildx)__ 
  ```bash
 docker buildx create --name multi-platform-builder --platform linux/arm/v7,linux/arm64/v8,linux/amd64
-docker buildx build --builder multi-platform-builder -t salvoxia/openvpn-tap:latest .
+docker buildx build --builder multi-platform-builder --platform linux/arm/v7,linux/arm64/v8,linux/amd64 -t salvoxia/openvpn-tap:latest .
 ```
 
 #### Environment Variables
