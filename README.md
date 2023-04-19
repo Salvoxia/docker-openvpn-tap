@@ -5,7 +5,7 @@ OpenVPN server in a Docker container complete with an EasyRSA PKI CA, modified f
 ## Disclaimer
 * Primary credit: [jpetazzo/dockvpn](https://github.com/jpetazzo/dockvpn)
 * Secondary credit (on which this is a fork): [kylemanna/docker-openvpn](https://github.com/kylemanna/docker-openvpn)
-* Tertiary credit (tap and bridge support principles): [aktur/docker-openvpn](https://github.com/aktur/docker-openvpn)
+* Tertiary credit (tap and bridge support principles): [https://github.com/aktur/docker-openvpn](aktur/docker-openvpn)
 
 This image was modified for my own private use with my homelab. 
 It was modified to support tap mode and network bridging out-of-the-box without the need of any additional or manual modifications.
@@ -13,13 +13,15 @@ Unlike the image this is image is based on, it is not tested extensively with di
 
 
 #### Cheat Sheet
- * __Build:__ docker ```build -t salvoxia/openvpn-tap:latest .```
- * __Build Multi-Arch (buildx)__ 
- ```bash
-docker buildx create --name multi-platform-builder --platform linux/arm/v7,linux/arm64/v8,linux/amd64
-docker buildx build --builder multi-platform-builder -t salvoxia/openvpn-tap:latest .
+__Build__ 
+```bash
+docker build -t salvoxia/openvpn-tap .
 ```
-
+__Build Multi-Arch__
+```bash
+docker buildx create --name multi-platform-builder --platform linux/arm/v7,linux/arm64/v8,linux/amd64
+docker buildx build --builder multi-platform-builder -t salvoxia/openvpn-tap .
+```
 #### Environment Variables
 | Environment varible     | Description                                                                                                                 |
 | :------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
@@ -88,7 +90,7 @@ Then start the server with host networking mode:
       
       docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN salvoxia/openvpn-tap
 
-Make sure to set choose the correct `iptables` command, otherwise routing might not work (refer to [Environment Variables](#environment-variables).
+Make sure to choose the correct `iptables` command, otherwise routing might not work (refer to [Environment Variables](#environment-variables).
 To use `iptables-nft`, start the container like this:
 
       docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN -e NFT_TABLES=1 salvoxia/openvpn-tap
