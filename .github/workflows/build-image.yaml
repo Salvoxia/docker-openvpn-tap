@@ -18,7 +18,7 @@ jobs:
       - name: Convert repository name ot image name
         id: image_name
         run: |
-          sed -E -e 's/docker-//' -e 's/^/image_name=/' <<<"${{ gitea.repository }}" >> "$GITHUB_OUTPUT"
+          sed -E -e 's/docker-//' -e 's/^/image_name=/' <<<"${{ github.repository }}" >> "$GITHUB_OUTPUT"
 
       - name: Generate Docker tag names
         id: meta
