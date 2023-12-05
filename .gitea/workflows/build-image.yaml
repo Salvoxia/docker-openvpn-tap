@@ -3,7 +3,8 @@ name: build-image
 on:
   push:
     branches:
-    - main
+    - blindfish
+    - dev
     tags:
     - '[0-9]+.*'
     
@@ -30,6 +31,8 @@ jobs:
           tags: |
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
+            # set edge tag for dev branch
+            type=edge,enable=true,branch=dev
             # Tags for non SemVer tag names
             type=match,pattern=([0-9]+.*),group=1
 
@@ -53,6 +56,6 @@ jobs:
           ACTIONS_RUNTIME_TOKEN: ''
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
