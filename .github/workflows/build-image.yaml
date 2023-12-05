@@ -3,7 +3,7 @@ name: build-image
 on:
   push:
     branches:
-    - blindfish
+    - master
     - dev
     tags:
     - '[0-9]+.*'
@@ -22,11 +22,11 @@ jobs:
 
       - name: Generate Docker tag names
         id: meta
-        uses: https://gitea.com/zcube/metadata-action@gitea
+        uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
           images: |
-            gitea.local.salvoxia.de/${{ steps.image_name.outputs.image_name }}
+            ghcr.io/${{ steps.image_name.outputs.image_name }}
           # generate Docker tags based on the following events/attributes
           tags: |
             # set latest tag for default branch
@@ -37,25 +37,22 @@ jobs:
             type=match,pattern=([0-9]+.*),group=1
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Login to local registry
-        uses: docker/login-action@v2
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          registry: gitea.local.salvoxia.de
+          registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v4
-        # Workaround until a new version of build-push-action is released
-        env:
-          ACTIONS_RUNTIME_TOKEN: ''
+        uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/arm/v7,linux/arm64/v8,linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
