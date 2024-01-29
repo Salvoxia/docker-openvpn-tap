@@ -422,7 +422,7 @@ fi
 
 SERVER_DIRECTIVE="server $(getroute $OVPN_SERVER)"
 if [ "${OVPN_USE_BRIDGE}" == "1" ]; then
-    SERVER_DIRECTIVE="server-bridge $(getroute $OVPN_SERVER) $OVPN_BR_ETH_SUBNET $OVPN_BR_DHCP_START $OVPN_BR_DHCP_END"
+    SERVER_DIRECTIVE="server-bridge $OVPN_BR_ETH_IP $OVPN_BR_ETH_SUBNET $OVPN_BR_DHCP_START $OVPN_BR_DHCP_END"
 fi
 
 cat > "$conf" <<EOF
