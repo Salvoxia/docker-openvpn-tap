@@ -157,6 +157,53 @@ if [ $? = 0 ]; then
     fi
 fi
 
+#Define cleanup procedure
+cleanup() 
+{
+    if [ $OVPN_DEVICE == "tap" ]; then
+        echo 'Tearing down bridge...'
+        
+        echo 'Stopping OpenVPN'
+        killall openvpn
+        
+        echo 'Removing iptables rules'
+        $IPTABLES_CMD -D INPUT -i $OVPN_BR_BR -j ACCEPT
+        $IPTABLES_CMD -D FORWARD -i $OVPN_BR_BR -j ACCEPT
 
+        echo 'Shuttdown down bridge'
+        ifconfig $OVPN_BR_BR down
+
+        echo 'Deleting bridge'
+        # check if bridge already exists; create if not
+        if [ $(ip link show | grep -c $OVPN_BR_BR:) -eq 1 ]; then
+            brctl delbr $OVPN_BR_BR
+        fi
+        
+        echo 'Removing tap device'
+        if [ $(ip link show | grep -c $OVPN_DEVICE$OVPN_DEVICEN:) -eq 1 ]; then
+            ifconfig $OVPN_DEVICE$OVPN_DEVICEN down
+            openvpn --rmtun --dev $OVPN_DEVICE$OVPN_DEVICEN
+        fi
+        
+        $IPTABLES_CMD -D INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
+
+        echo 'setting IP, subnet and broadcast address for physical device'
+        ifconfig $OVPN_BR_ETH_IF $OVPN_BR_ETH_IP netmask $OVPN_BR_ETH_SUBNET broadcast $OVPN_BR_ETH_BROADCAST
+
+        echo 'checking if default gateway needs to be added for pyhsical device'
+        if [ $(route | grep -c -Eo "^default\s+$OVPN_BR_ETH_GATEWAY.+$OVPN_BR_ETH_IF$") -eq 0 ]; then
+            route add default gw $OVPN_BR_ETH_GATEWAY $OVPN_BR_ETH_IF
+        fi
+    fi
+}
+
+#Trap SIGTERM for bridge cleanup
+trap 'cleanup' SIGTERM
+
+#Run OpenVPN
 echo "Running 'openvpn ${ARGS[@]} ${USER_ARGS[@]}'"
-exec openvpn ${ARGS[@]} ${USER_ARGS[@]}
+exec openvpn ${ARGS[@]} ${USER_ARGS[@]} &
+
+#Wait
+wait $!
+
