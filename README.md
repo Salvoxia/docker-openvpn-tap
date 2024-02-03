@@ -11,92 +11,106 @@ This image was modified for my own private use with my homelab.
 It was modified to support tap mode and network bridging out-of-the-box without the need of any additional or manual modifications.
 Unlike the image this is image is based on, it is not tested extensively with different network setups, host architectures or VPN configurations. It works the way I use it. 
 
+#### Upstream Links
 
-#### Cheat Sheet
-__Build__ 
-```bash
-docker build -t salvoxia/openvpn-tap .
-```
-__Build Multi-Arch__
-```bash
-docker buildx create --name multi-platform-builder --platform linux/arm/v7,linux/arm64/v8,linux/amd64
-docker buildx build --builder multi-platform-builder -t salvoxia/openvpn-tap .
-```
-#### Environment Variables
+* Docker Registry @ [salvoxia/openvpn-tap](https://hub.docker.com/r/salvoxia/openvpn-tap/)
+* GitHub @ [salvoxia/docker-openvpn-tap](https://github.com/salvoxia/docker-openvpn-tap)
+
+## Environment Variables
 | Environment varible     | Description                                                                                                                 |
 | :------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
 | DEBUG               | Set to 1 to enable debugging output                                                                                         |
 | NFT_TABLES          | Set to 1 to use `iptables-nft` command instead of legacy `iptables` command for setting up ACCEPT and FORWARD rules <br> Use this if you intend to set up a bridge and your host uses the new iptables-nft. |
 
 
-#### Upstream Links
-
-* Docker Registry @ [salvoxia/openvpn-tap](https://hub.docker.com/r/salvoxia/openvpn-tap/)
-* GitHub @ [salvoxia/docker-openvpn-tap](https://github.com/salvoxia/docker-openvpn-tap)
-
-
 ## Quick Start
+* For TAP mode, see [TAP and bridge support](#tap-and-bridge-support).
 
 * Pick a name for the `$OVPN_DATA` data volume container. It's recommended to
   use the `ovpn-data-` prefix to operate seamlessly with the reference systemd
-  service.  Users are encourage to replace `example` with a descriptive name of
+  service.  Users are encouraged to replace `example` with a descriptive name of
   their choosing.
-
-      OVPN_DATA="ovpn-data-example"
+  ```bash
+  OVPN_DATA="ovpn-data-example"
+  ```
 
 * Initialize the `$OVPN_DATA` container that will hold the configuration files
   and certificates.  The container will prompt for a passphrase to protect the
   private key used by the newly generated certificate authority.
-
-      docker volume create --name $OVPN_DATA
-      docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_genconfig -u udp://VPN.SERVERNAME.COM
-      docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap ovpn_initpki
+  ```bash
+  docker volume create --name $OVPN_DATA
+  docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_genconfig -u udp://VPN.SERVERNAME.COM
+  docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap ovpn_initpki
+  ```
 
 * Start OpenVPN server process
-
-      docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN salvoxia/openvpn-tap
+  ```bash
+  docker run -v $OVPN_DATA:/etc/openvpn -d -p 1194:1194/udp --cap-add=NET_ADMIN salvoxia/openvpn-tap
+  ```
 
 * Generate a client certificate without a passphrase
-
-      docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap easyrsa build-client-full CLIENTNAME nopass
+  ```bash
+  docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap easyrsa build-client-full CLIENTNAME nopass
+  ```
 
 * Retrieve the client configuration with embedded certificates
-
-      docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_getclient CLIENTNAME > CLIENTNAME.ovpn
-
+  ```bash
+  docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_getclient CLIENTNAME > CLIENTNAME.ovpn
+  ```
 ## TAP and bridge support
 
 This image has been modified to work with tap mode and support network bridging out-of-the-box.
 You must start the container with host networking mode.
 
-To set up a server using tap and bridging, use the `-B` argument when creating the configuration. You must supply all bridge-related arguments as well:
+### ⚠️ __Caution:__ 
 
-      docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap \
-        ovpn_genconfig \
-            -u udp://VPN.SERVERNAME.COM:PORT \
-            -t
-            -B
-            --bridge-name 'br0' \
-            --bridge-eth-if 'eth0' \
-            --bridge-eth-ip '192.168.0.199' \
-            --bridge-eth-subnet '255.255.255.0' \
-            --bridge-eth-broadcast '192.168.0.255' \
-            --bridge-eth-gateway '192.168.0.1' \
-            --bridge-eth-mac 'b8:32:ac:8b:17:2e' \
-            --bridge-dhcp-start '192.168.0.200' \
-            --bridge-dhcp-end '192.168.0.220'
+Bridge mode is __not__ compatible with NetworkManager running on the host. The container creates a network bridge on the host, bridging the interface you specify and updating routing tables accordingly.  
+If the network interface you want to bridge is managed by NetworkManager, it will interfere with the routing tables and eventually render your host unreachable over the network!  
+NetworkManager provides direct support for [various VPN plugins](https://wiki.gnome.org/Projects/NetworkManager/VPN) for direct VPN support.  
+If you still want to use this image, you must disable NetworkManager for the network device you want to bridge.
+Assuming that device is called `eth0`, you can set the device to "unmanaged" like this:
+```bash
+nmcli device set eth0 managed no
+```
 
-Then start the server with host networking mode:
+## Configuring the container for TAP mode
+
+  * First, create an OpenVPN data volume or choose a local path on the host system to mount into the container.
+    ```bash
+    OVPN_DATA="ovpn-data-example"
+    docker volume create --name $OVPN_DATA
+    ```
+
+  * To set up a server using tap and bridging, use the `-B` argument when creating the configuration. You must supply all bridge-related arguments as well:
+    ```bash
+    docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap \
+      ovpn_genconfig \
+          -u udp://VPN.SERVERNAME.COM:PORT \
+          -t \
+          -B \
+          --bridge-name 'br0' \
+          --bridge-eth-if 'eth0' \
+          --bridge-eth-ip '192.168.0.199' \
+          --bridge-eth-subnet '255.255.255.0' \
+          --bridge-eth-broadcast '192.168.0.255' \
+          --bridge-eth-gateway '192.168.0.1' \
+          --bridge-eth-mac 'b8:32:ac:8b:17:2e' \
+          --bridge-dhcp-start '192.168.0.200' \
+          --bridge-dhcp-end '192.168.0.220'
+    ```
+    ⚠️ __Caution__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
+
+  * Then start the server with host networking mode:
+    ```bash
+    docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN salvoxia/openvpn-tap
+    ```
+
+    Make sure to choose the correct `iptables` command, otherwise routing might not work (refer to [Environment Variables](#environment-variables).
+    To use `iptables-nft`, start the container like this:
+    ```bash
+    docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN -e NFT_TABLES=1 salvoxia/openvpn-tap
+    ```
       
-      docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN salvoxia/openvpn-tap
-
-Make sure to choose the correct `iptables` command, otherwise routing might not work (refer to [Environment Variables](#environment-variables).
-To use `iptables-nft`, start the container like this:
-
-      docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN -e NFT_TABLES=1 salvoxia/openvpn-tap
-      
-⚠️ __Attention__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
-
 ## Next Steps
 
 ### More Reading
@@ -119,18 +133,19 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
 ## Debugging Tips
 
 * Create an environment variable with the name DEBUG and value of 1 to enable debug output (using "docker -e").
-
-        docker run -v $OVPN_DATA:/etc/openvpn -p 1194:1194/udp --cap-add=NET_ADMIN -e DEBUG=1 salvoxia/openvpn-tap
-
+  ```bash
+  docker run -v $OVPN_DATA:/etc/openvpn -p 1194:1194/udp --cap-add=NET_ADMIN -e DEBUG=1 salvoxia/openvpn-tap
+  ```
 * Test using a client that has openvpn installed correctly
-
-        $ openvpn --config CLIENTNAME.ovpn
-
+  ```bash
+  $ openvpn --config CLIENTNAME.ovpn
+  ```
 * Run through a barrage of debugging checks on the client if things don't just work
-
-        $ ping 8.8.8.8    # checks connectivity without touching name resolution
-        $ dig google.com  # won't use the search directives in resolv.conf
-        $ nslookup google.com # will use search
+  ```bash
+  ping 8.8.8.8    # checks connectivity without touching name resolution
+  dig google.com  # won't use the search directives in resolv.conf
+  nslookup google.com # will use search
+  ```
 
 * Consider setting up a [systemd service](/docs/systemd.md) for automatic
   start-up at boot time and restart in the event the OpenVPN daemon or Docker
@@ -249,6 +264,16 @@ of a guarantee in the future.
   * Windows OpenVPN Client 2.5.7 (64bit) 
   * Android App VPN Client Pro (supports TAP with rooting the device)
 
+#### Cheat Sheet
+__Build__ 
+```bash
+docker build -t salvoxia/openvpn-tap .
+```
+__Build Multi-Arch__
+```bash
+docker buildx create --name multi-platform-builder --platform linux/arm/v7,linux/arm64/v8,linux/amd64
+docker buildx build --builder multi-platform-builder -t salvoxia/openvpn-tap .
+```
 
 ## Original License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fkylemanna%2Fdocker-openvpn?ref=badge_large)
