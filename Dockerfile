@@ -1,5 +1,5 @@
 # Primary credit: https://github.com/jpetazzo/dockvpn
-# Secondary credit: https://github.com/jpetazzo/dockvpn
+# Secondary credit: https://github.com/kylemanna/docker-openvpn
 # Tertiary credit for TAP/bridge adjusments: https://github.com/aktur/docker-openvpn
 
 # Smallest base image
