@@ -66,7 +66,7 @@ You must start the container with host networking mode.
 
 Bridge mode is __not__ compatible with NetworkManager running on the host. The container creates a network bridge on the host, bridging the interface you specify and updating routing tables accordingly.  
 If the network interface you want to bridge is managed by NetworkManager, it will interfere with the routing tables and eventually render your host unreachable over the network!  
-NetworkManager provides direct support for [various VPN plugins](https://wiki.gnome.org/Projects/NetworkManager/VPN) for direct VPN support.  
+NetworkManager provides [various VPN plugins](https://wiki.gnome.org/Projects/NetworkManager/VPN) for direct VPN support.  
 If you still want to use this image, you must disable NetworkManager for the network device you want to bridge.
 Assuming that device is called `eth0`, you can set the device to "unmanaged" like this:
 ```bash
@@ -100,6 +100,10 @@ nmcli device set eth0 managed no
     ```
     ⚠️ __Caution__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
 
+  * Create certificates for generating clients:
+    ```bash
+    docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap ovpn_initpki
+    ```
   * Then start the server with host networking mode:
     ```bash
     docker run -v $OVPN_DATA:/etc/openvpn -d --network host --cap-add=NET_ADMIN salvoxia/openvpn-tap
