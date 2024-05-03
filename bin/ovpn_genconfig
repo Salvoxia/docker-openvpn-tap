@@ -102,6 +102,7 @@ usage() {
     echo " -m    Set client MTU"
     echo " -N    Configure NAT to access external server network"
     echo " -t    Use TAP device (instead of TUN device)"
+    echo " -o    Set the OpenVPN device number, e.g. pass 1 to create interface tun1. Default: 0"
     echo " -T    Encrypt packets with the given cipher algorithm instead of the default one (tls-cipher)."
     echo " -z    Enable comp-lzo compression."
     echo " -B    Start a network bridge for TAP mode and use \"server-bridge\" directive in OpenVPN server config;"
