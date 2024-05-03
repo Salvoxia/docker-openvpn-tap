@@ -196,7 +196,7 @@ OVPN_BR_DHCP_END=''
 [ -r "$OVPN_ENV" ] && source "$OVPN_ENV"
 
 # Parse arguments
-PARSED_ARGUMENTS=$(getopt -l "bridge-name:,bridge-eth-if:,bridge-eth-ip:,bridge-eth-subnet:,bridge-eth-broadcast:,bridge-eth-gateway:,bridge-eth-mac:,bridge-dhcp-start:,bridge-dhcp-end:" -o ":a:e:E:C:T:r:s:du:bcp:n:k:DNm:f:tz2B" -- "$@")
+PARSED_ARGUMENTS=$(getopt -l "bridge-name:,bridge-eth-if:,bridge-eth-ip:,bridge-eth-subnet:,bridge-eth-broadcast:,bridge-eth-gateway:,bridge-eth-mac:,bridge-dhcp-start:,bridge-dhcp-end:" -o ":a:e:E:C:T:r:s:du:bcp:n:k:DNm:f:o:tz2B" -- "$@")
 VALID_ARGUMENTS=$?
 if [ "$VALID_ARGUMENTS" != "0" ]; then
   usage
@@ -288,6 +288,10 @@ do
             ;;
         -t)
             OVPN_DEVICE="tap"
+            ;;
+        -o)
+            shift
+            OVPN_DEVICEN="$1"
             ;;
         -z)
             OVPN_COMP_LZO=1
