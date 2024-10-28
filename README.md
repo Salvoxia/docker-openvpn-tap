@@ -50,12 +50,12 @@ Unlike the image this is image is based on, it is not tested extensively with di
 
 * Generate a client certificate without a passphrase
   ```bash
-  docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap easyrsa build-client-full CLIENTNAME nopass
+  docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap easyrsa build-client-full $CLIENTNAME nopass
   ```
 
 * Retrieve the client configuration with embedded certificates
   ```bash
-  docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_getclient CLIENTNAME > CLIENTNAME.ovpn
+  docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap ovpn_getclient $CLIENTNAME > $CLIENTNAME.ovpn
   ```
 ## TAP and bridge support
 
@@ -142,7 +142,7 @@ If you prefer to use `docker-compose` please refer to the [documentation](docs/d
   ```
 * Test using a client that has openvpn installed correctly
   ```bash
-  $ openvpn --config CLIENTNAME.ovpn
+  $ openvpn --config $CLIENTNAME.ovpn
   ```
 * Run through a barrage of debugging checks on the client if things don't just work
   ```bash
