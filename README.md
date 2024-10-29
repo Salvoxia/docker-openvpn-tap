@@ -88,7 +88,7 @@ nmcli device set eth0 managed no
           -u udp://VPN.SERVERNAME.COM:PORT \  # Your public IP/domain and port forwarded to Docker
           -t \                                 # Enable TAP mode
           -B \                                # Enable bridging mode
-          --bridge-name 'br0' \               # Bridge interface name (Optional, change if br0 already exists)
+          --bridge-name 'br0' \               # Bridge interface name (change it if br0 already exists)
           --bridge-eth-if 'eth0' \            # Host network interface to bridge with
           --bridge-eth-ip '192.168.0.199' \   # Static IP of your Docker host
           --bridge-eth-subnet '255.255.255.0' \  # Subnet mask of your Docker host, no need to change for most cases
