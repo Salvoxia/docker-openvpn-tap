@@ -24,3 +24,9 @@ Split tunnels are configurations where only some of the traffic from a client go
 You can pass multiple (**-e**) options to `ovpn_genconfig`. For example, if you need to add _'duplicate-cn'_ and _'topology subnet'_ to the server configuration you could do something like this:
 
     ovpn_genconfig -e 'duplicate-cn' -e 'topology subnet' -u udp://VPN.SERVERNAME.COM
+
+## I am using ESXi with TAP mode, but I can only ping the host machine and not other devices on the same subnet. How can I fix this?
+
+To resolve this issue, you can try enabling Promiscuous Mode on the vSwitch configuration for the virtual switch that your VM is connected to. However, please note that this is just one possible solution and may not work in all cases.
+
+Reboot the VM and start the docker container again. You should be able to ping other devices on the same subnet. And find your SMB share over home network.
