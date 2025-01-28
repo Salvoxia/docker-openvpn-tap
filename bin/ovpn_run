@@ -70,30 +70,14 @@ if [ $OVPN_DEVICE == "tap" ]; then
     
     ip link set $OVPN_DEVICE$OVPN_DEVICEN up
     echo 'Setting up bridge'
-    BRIDGE_EXISTS=$(ip link show | grep -c $OVPN_BR_BR:)
     # check if bridge already exists; create if not
-    if [ $BRIDGE_EXISTS -eq 0 ]; then
+    if [ $(ip link show | grep -c $OVPN_BR_BR:) -eq 0 ]; then
         brctl addbr $OVPN_BR_BR
 
         echo 'setting IP, subnet and broadcast address for bridge'
         ifconfig $OVPN_BR_BR $OVPN_BR_ETH_IP netmask $OVPN_BR_ETH_SUBNET broadcast $OVPN_BR_ETH_BROADCAST
-        
-        # Add default route if eth is also gateway port
         echo 'setting mac address for bridge'
         ip link set $OVPN_BR_BR address $OVPN_BR_ETH_MAC
-
-        echo 'checking if default gateway needs to be added for bridge'
-        if [ $(route | grep -c -Eo "^default\s+$OVPN_BR_ETH_GATEWAY.+$OVPN_BR_BR$") -eq 0 ]; then
-            route add default gw $OVPN_BR_ETH_GATEWAY $OVPN_BR_BR
-        fi
-
-        echo 'setting up IPTABLES for bridge device'
-        if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $OVPN_BR_BR -j ACCEPT") -eq 0 ]; then
-            $IPTABLES_CMD -A INPUT -i $OVPN_BR_BR -j ACCEPT
-        fi
-        if [ $($IPTABLES_CMD -S | grep -c -- "-A FORWARD -i $OVPN_BR_BR -j ACCEPT") -eq 0 ]; then
-            $IPTABLES_CMD -A FORWARD -i $OVPN_BR_BR -j ACCEPT
-        fi
     else
         # Remember the bridge alread existed at startup
         touch /tmp/bridge_existed
@@ -102,9 +86,6 @@ if [ $OVPN_DEVICE == "tap" ]; then
     # check if $OVPN_BR_ETH_IF is already added to bridge; add if not
     if [ $(brctl show $OVPN_BR_BR | grep -c $OVPN_BR_ETH_IF) -eq 0 ]; then
         brctl addif $OVPN_BR_BR $OVPN_BR_ETH_IF
-
-        echo 'setting eth device to promiscous mode'
-        ifconfig $OVPN_BR_ETH_IF 0.0.0.0 promisc up
     else
         # Remember the interface was already part of the bridge at startup
         touch /tmp/if_belonged_to_bridge
@@ -117,14 +98,27 @@ if [ $OVPN_DEVICE == "tap" ]; then
     
     echo 'setting tap device to promiscous mode'
     ifconfig $OVPN_DEVICE$OVPN_DEVICEN 0.0.0.0 promisc up
+    echo 'setting eth device to promiscous mode'
+    ifconfig $OVPN_BR_ETH_IF 0.0.0.0 promisc up
+
+    # Add default route if eth is also gateway port
+    echo 'checking if default gateway needs to be added for bridge'
+    if [ $(route | grep -c -Eo "^default\s+$OVPN_BR_ETH_GATEWAY.+$OVPN_BR_BR$") -eq 0 ]; then
+        route add default gw $OVPN_BR_ETH_GATEWAY $OVPN_BR_BR
+    fi
     
-    echo 'setting up IPTABLES for tap device'
+    echo 'setting up IPTABLES'
     # check if entry already exists before adding
     if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT") -eq 0 ]; then
        
        $IPTABLES_CMD -A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT
     fi
-
+    if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $OVPN_BR_BR -j ACCEPT") -eq 0 ]; then
+        $IPTABLES_CMD -A INPUT -i $OVPN_BR_BR -j ACCEPT
+    fi
+    if [ $($IPTABLES_CMD -S | grep -c -- "-A FORWARD -i $OVPN_BR_BR -j ACCEPT") -eq 0 ]; then
+        $IPTABLES_CMD -A FORWARD -i $OVPN_BR_BR -j ACCEPT
+    fi
 fi
 
 if [ -d "$OPENVPN/ccd" ]; then
