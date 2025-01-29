@@ -200,7 +200,7 @@ cleanup()
         OVPN_PID=$(pgrep openvpn)
         killall openvpn
         # Wait for shutdown complete
-        while kill -0 $OVPN_PID; do
+        while $(kill -0 $PID 2>/dev/null); do
             sleep 1
         done
         
