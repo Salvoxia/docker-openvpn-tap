@@ -200,18 +200,18 @@ cleanup()
         killall openvpn
         
         echo 'Removing iptables rules'
-        if [ $(grep "br input role exists" /tmp/initial_situation) -eq 0 ]; then
+        if [ -z "$(grep "br input role exists" /tmp/initial_situation)" ]; then
             echo "Removing bridge INPUT rule"
             $IPTABLES_CMD -D INPUT -i $OVPN_BR_BR -j ACCEPT
         fi
         
-        if [ $(grep "br forward role exists" /tmp/initial_situation) -eq 0 ]; then
+        if [ -z "$(grep "br forward role exists" /tmp/initial_situation)" ]; then
             echo "Removing bridge INPUT rule"
             $IPTABLES_CMD -D FORWARD -i $OVPN_BR_BR -j ACCEPT
         fi
         
         # Remove physical interface from the bridge if it did not belong to the bridge at startup
-        if [ $(grep "if belongs to bridge" /tmp/initial_situation) -eq 0 ]; then
+        if [ -z "$(grep "if belongs to bridge" /tmp/initial_situation)" ]; then
             # Remove eth device from bridge
             brctl delif $OVPN_BR_BR $OVPN_BR_ETH_IF
         fi
@@ -220,7 +220,7 @@ cleanup()
         # Remove OpenVPN device from bridge
         brctl delif $OVPN_BR_BR $OVPN_DEVICE$OVPN_DEVICEN
 
-        if [ $(grep "bridge exists" /tmp/initial_situation) -eq 0 ]; then
+        if [ -z "$(grep "bridge exists" /tmp/initial_situation)" ]; then
             echo 'Shuttdown down bridge'
             ip link set $OVPN_BR_BR down
 
@@ -230,7 +230,7 @@ cleanup()
             fi
         fi
 
-        if [ $(grep "if belongs to bridge" /tmp/initial_situation) -eq 0 ]; then
+        if [ -z "$(grep "if belongs to bridge" /tmp/initial_situation)" ]; then
             echo 'setting IP, subnet and broadcast address for physical device'
             #ifconfig $OVPN_BR_ETH_IF $OVPN_BR_ETH_IP netmask $OVPN_BR_ETH_SUBNET broadcast $OVPN_BR_ETH_BROADCAST
             OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
