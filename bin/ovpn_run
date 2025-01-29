@@ -198,8 +198,10 @@ cleanup()
         
         echo 'Stopping OpenVPN'
         killall openvpn
-        sleep 6
-        echo 'Removing iptables rules'
+        while kill -0 $(pgrep openvpn); do
+            sleep 1
+        done
+        
         if [ -z "$(grep "br input role exists" /tmp/initial_situation)" ]; then
             echo "Removing bridge INPUT rule"
             $IPTABLES_CMD -D INPUT -i $OVPN_BR_BR -j ACCEPT
