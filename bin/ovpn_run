@@ -197,8 +197,10 @@ cleanup()
         
         
         echo 'Stopping OpenVPN'
+        OVPN_PID=$(pgrep openvpn)
         killall openvpn
-        while kill -0 $(pgrep openvpn); do
+        # Wait for shutdown complete
+        while kill -0 $OVPN_PID; do
             sleep 1
         done
         
