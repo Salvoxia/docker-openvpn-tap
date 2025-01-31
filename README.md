@@ -100,6 +100,12 @@ nmcli device set eth0 managed no
     ```
     ⚠️ __Caution__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
 
+    If a bridge with the provided name already exists, the container will simply use that. If the host network interface (`--bridge-eth-if`) is already part of that bridge, the container will leave the bridge alone on startup and shutdown. In that case, the following arguments do not have any effect:
+      - `--bridge-eth-subnet`
+      - `--bridge-eth-broadcast`
+      - `--bridge-eth-gatewayt`
+      - `--bridge-eth-mac`
+
   * Create certificates for generating clients:
     ```bash
     docker run -v $OVPN_DATA:/etc/openvpn --rm -it salvoxia/openvpn-tap ovpn_initpki
