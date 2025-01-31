@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mask2cdr ()
+mask2cidr ()
 {
    # Assumes there's no "255." after a non-255 byte in the mask
    local x=${1##*255.}
