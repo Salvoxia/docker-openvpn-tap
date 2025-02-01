@@ -90,10 +90,8 @@ if [ $OVPN_DEVICE == "tap" ]; then
 
         echo 'setting IP, subnet and broadcast address for bridge'
         OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
-        echo "ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_BR"
-        ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_BR
-        echo "ip addr add broadcast $OVPN_BR_ETH_BROADCAST dev $OVPN_BR_BR"
-        ip addr add broadcast $OVPN_BR_ETH_BROADCAST dev $OVPN_BR_BR
+        echo "ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_BR"
+        ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_BR
 
         echo 'setting mac address for bridge'
         ip link set $OVPN_BR_BR address $OVPN_BR_ETH_MAC
@@ -243,10 +241,8 @@ cleanup()
 
         if [ -z "$(grep "if belongs to bridge" /tmp/initial_situation)" ]; then
             echo 'setting IP, subnet and broadcast address for physical device'
-            #ifconfig $OVPN_BR_ETH_IF $OVPN_BR_ETH_IP netmask $OVPN_BR_ETH_SUBNET broadcast $OVPN_BR_ETH_BROADCAST
             OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
-            ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_ETH_IF
-            ip addr add broadcast $OVPN_BR_ETH_BROADCAST dev $OVPN_BR_ETH_IF
+            ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_ETH_IF
 
             echo 'checking if default gateway needs to be added for pyhsical device'
             if [ $(ip route | grep -c "default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_ETH_IF") -eq 0 ]; then
