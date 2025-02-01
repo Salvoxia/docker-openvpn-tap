@@ -83,14 +83,11 @@ if [ $OVPN_DEVICE == "tap" ]; then
     echo "" > /tmp/initial_situation
     # check if bridge already exists; create if not
     if [ $(ip link show | grep -c $OVPN_BR_BR:) -eq 0 ]; then
-        echo "ip link add name $OVPN_BR_BR type bridge"
         ip link add name $OVPN_BR_BR type bridge
-        echo "ip link set dev $OVPN_BR_BR up"
         ip link set dev $OVPN_BR_BR up
 
         echo 'setting IP, subnet and broadcast address for bridge'
         OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
-        echo "ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_BR"
         ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_BR
 
         echo 'setting mac address for bridge'
@@ -109,7 +106,6 @@ if [ $OVPN_DEVICE == "tap" ]; then
 
     # check if $OVPN_BR_ETH_IF is already added to bridge; add if not
     if [ $(brctl show $OVPN_BR_BR | grep -c $OVPN_BR_ETH_IF) -eq 0 ]; then
-        echo "ip link set $OVPN_BR_ETH_IF master $OVPN_BR_BR"
         ip link set $OVPN_BR_ETH_IF master $OVPN_BR_BR
         ip addr del $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_ETH_IF
     else
@@ -120,21 +116,9 @@ if [ $OVPN_DEVICE == "tap" ]; then
     
     # check if openvpn device is already added to bridge; add if not
     if [ $(brctl show $OVPN_BR_BR | grep -c $OVPN_DEVICE$OVPN_DEVICEN) -eq 0 ]; then
-        echo "ip link set $OVPN_DEVICE$OVPN_DEVICEN master $OVPN_BR_BR"
         ip link set $OVPN_DEVICE$OVPN_DEVICEN master $OVPN_BR_BR
     fi
-    
-    #echo 'setting tap device to promiscous mode'
-    #ifconfig $OVPN_DEVICE$OVPN_DEVICEN 0.0.0.0 promisc up
-    ## check if interface is already in promiscous mode
-    #if [ $(ip link show | grep "$OVPN_BR_ETH_IF:.*PROMISC.*") -eq 0 ]; then
-    #    echo 'setting eth device to promiscous mode'
-    #    ifconfig $OVPN_BR_ETH_IF 0.0.0.0 promisc up
-    #else
-    #    # Remember interface was already in promiscous mode
-    #    echo "if is promisc" >> /tmp/initial_situation
-    #fi
-    
+        
     echo 'setting up IPTABLES'
     # check if entry already exists before adding
     if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT") -eq 0 ]; then
