@@ -240,9 +240,9 @@ cleanup()
         fi
 
         if [ -z "$(grep "if belongs to bridge" /tmp/initial_situation)" ]; then
-            echo 'setting IP, subnet and broadcast address for physical device'
-            OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
-            ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_ETH_IF
+            #echo 'setting IP, subnet and broadcast address for physical device'
+            #OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
+            #ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_ETH_IF
 
             echo 'checking if default gateway needs to be added for pyhsical device'
             if [ $(ip route | grep -c "default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_ETH_IF") -eq 0 ]; then
