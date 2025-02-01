@@ -83,12 +83,12 @@ if [ $OVPN_DEVICE == "tap" ]; then
     echo "" > /tmp/initial_situation
     # check if bridge already exists; create if not
     if [ $(ip link show | grep -c $OVPN_BR_BR:) -eq 0 ]; then
-        brctl addbr $OVPN_BR_BR
+        ip link add name $OVPN_BR_BR type bridge
+        ip link set dev $OVPN_BR_BR up
 
         echo 'setting IP, subnet and broadcast address for bridge'
         OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
-        ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_BR
-        ip addr add broadcast $OVPN_BR_ETH_BROADCAST dev $OVPN_BR_BR
+        ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_BR
 
         echo 'setting mac address for bridge'
         ip link set $OVPN_BR_BR address $OVPN_BR_ETH_MAC
@@ -98,9 +98,16 @@ if [ $OVPN_DEVICE == "tap" ]; then
         echo "bridge $OVPN_BR_BR already exists"
     fi
     
+    # Add default route if eth is also gateway port
+    echo 'checking if default gateway needs to be added for bridge'
+    if [ $(ip route | grep -c "default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_BR") -eq 0 ]; then
+        ip route append default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_BR
+    fi
+
     # check if $OVPN_BR_ETH_IF is already added to bridge; add if not
     if [ $(brctl show $OVPN_BR_BR | grep -c $OVPN_BR_ETH_IF) -eq 0 ]; then
-        brctl addif $OVPN_BR_BR $OVPN_BR_ETH_IF
+        ip link set $OVPN_BR_ETH_IF master $OVPN_BR_BR
+        ip addr del $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_ETH_IF
     else
         # Remember the interface was already part of the bridge at startup
         echo "if belongs to bridge" >> /tmp/initial_situation
@@ -109,26 +116,9 @@ if [ $OVPN_DEVICE == "tap" ]; then
     
     # check if openvpn device is already added to bridge; add if not
     if [ $(brctl show $OVPN_BR_BR | grep -c $OVPN_DEVICE$OVPN_DEVICEN) -eq 0 ]; then
-        brctl addif $OVPN_BR_BR $OVPN_DEVICE$OVPN_DEVICEN
+        ip link set $OVPN_DEVICE$OVPN_DEVICEN master $OVPN_BR_BR
     fi
-    
-    #echo 'setting tap device to promiscous mode'
-    #ifconfig $OVPN_DEVICE$OVPN_DEVICEN 0.0.0.0 promisc up
-    ## check if interface is already in promiscous mode
-    #if [ $(ip link show | grep "$OVPN_BR_ETH_IF:.*PROMISC.*") -eq 0 ]; then
-    #    echo 'setting eth device to promiscous mode'
-    #    ifconfig $OVPN_BR_ETH_IF 0.0.0.0 promisc up
-    #else
-    #    # Remember interface was already in promiscous mode
-    #    echo "if is promisc" >> /tmp/initial_situation
-    #fi
-
-    # Add default route if eth is also gateway port
-    echo 'checking if default gateway needs to be added for bridge'
-    if [ $(route | grep -c -Eo "^default\s+$OVPN_BR_ETH_GATEWAY.+$OVPN_BR_BR$") -eq 0 ]; then
-        route add default gw $OVPN_BR_ETH_GATEWAY $OVPN_BR_BR
-    fi
-    
+        
     echo 'setting up IPTABLES'
     # check if entry already exists before adding
     if [ $($IPTABLES_CMD -S | grep -c -- "-A INPUT -i $OVPN_DEVICE$OVPN_DEVICEN -j ACCEPT") -eq 0 ]; then
@@ -217,12 +207,12 @@ cleanup()
         # Remove physical interface from the bridge if it did not belong to the bridge at startup
         if [ -z "$(grep "if belongs to bridge" /tmp/initial_situation)" ]; then
             # Remove eth device from bridge
-            brctl delif $OVPN_BR_BR $OVPN_BR_ETH_IF
+            ip link set $OVPN_BR_ETH_IF nomaster
         fi
         
         echo 'Removing tap device from bridge'
         # Remove OpenVPN device from bridge
-        brctl delif $OVPN_BR_BR $OVPN_DEVICE$OVPN_DEVICEN
+        ip link set $OVPN_DEVICE$OVPN_DEVICEN nomaster
 
         if [ -z "$(grep "bridge exists" /tmp/initial_situation)" ]; then
             echo 'Shuttdown down bridge'
@@ -230,20 +220,18 @@ cleanup()
 
             echo 'Deleting bridge'
             if [ $(ip link show | grep -c $OVPN_BR_BR:) -eq 1 ]; then
-                brctl delbr $OVPN_BR_BR
+                ip link delete $OVPN_BR_BR type bridge
             fi
         fi
 
         if [ -z "$(grep "if belongs to bridge" /tmp/initial_situation)" ]; then
-            echo 'setting IP, subnet and broadcast address for physical device'
-            #ifconfig $OVPN_BR_ETH_IF $OVPN_BR_ETH_IP netmask $OVPN_BR_ETH_SUBNET broadcast $OVPN_BR_ETH_BROADCAST
+            #echo 'setting IP, subnet and broadcast address for physical device'
             OVPN_BR_CIDR=$(mask2cidr $OVPN_BR_ETH_SUBNET)
-            ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR dev $OVPN_BR_ETH_IF
-            ip addr add broadcast $OVPN_BR_ETH_BROADCAST dev $OVPN_BR_ETH_IF
-
+            ip addr add $OVPN_BR_ETH_IP/$OVPN_BR_CIDR brd + dev $OVPN_BR_ETH_IF
+        
             echo 'checking if default gateway needs to be added for pyhsical device'
             if [ $(ip route | grep -c "default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_ETH_IF") -eq 0 ]; then
-                ip route add default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_ETH_IF
+                ip route append default via $OVPN_BR_ETH_GATEWAY dev $OVPN_BR_ETH_IF
             fi
         fi
 

@@ -52,7 +52,6 @@ docker-compose run --rm openvpn ovpn_genconfig -u udp://VPN.SERVERNAME.COM:PORT 
     --bridge-eth-if 'eth0' \
     --bridge-eth-ip '192.168.0.199' \
     --bridge-eth-subnet '255.255.255.0' \
-    --bridge-eth-broadcast '192.168.0.255' \
     --bridge-eth-gateway '192.168.0.1' \
     --bridge-eth-mac 'b8:32:ac:8b:17:2e' \
     --bridge-dhcp-start '192.168.0.200' \

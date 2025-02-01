@@ -92,7 +92,6 @@ nmcli device set eth0 managed no
           --bridge-eth-if 'eth0' \            # Host network interface to bridge with
           --bridge-eth-ip '192.168.0.199' \   # Static IP of your Docker host
           --bridge-eth-subnet '255.255.255.0' \  # Subnet mask of your Docker host, no need to change for most cases
-          --bridge-eth-broadcast '192.168.0.255' \  # Network broadcast address, usually looks like xx.xx.xx.255
           --bridge-eth-gateway '192.168.0.1' \      # Your router's IP address, or gateway IP
           --bridge-eth-mac 'b8:32:ac:8b:17:2e' \    # MAC address for bridge interface, could be the same as the host interface or a random one
           --bridge-dhcp-start '192.168.0.200' \     # Start of VPN client IP range
@@ -101,9 +100,9 @@ nmcli device set eth0 managed no
     ⚠️ __Caution__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
 
     If a bridge with the provided name already exists, the container will simply use that. If the host network interface (`--bridge-eth-if`) is already part of that bridge, the container will leave the bridge alone on startup and shutdown. In that case, the following arguments do not have any effect:
+      - `--bridge-eth-ip`
       - `--bridge-eth-subnet`
-      - `--bridge-eth-broadcast`
-      - `--bridge-eth-gatewayt`
+      - `--bridge-eth-gateway`
       - `--bridge-eth-mac`
 
   * Create certificates for generating clients:

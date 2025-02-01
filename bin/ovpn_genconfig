@@ -111,7 +111,7 @@ usage() {
     echo " --bridge-name          Name of the network bridge, e.g. br0"
     echo " --bridge-eth-if        Name of the network interface to bridge, e.g. eth0"
     echo " --bridge-eth-ip        IP addresss to assign to the bridge"
-    echo " --bridge-eth-broadcast Broadcast address to apply to the bridge"
+    echo " --bridge-eth-broadcast DEPRECATED. DO NOT USE!"
     echo " --bridge-eth-subnet    Subnetmask to apply to the bridge"
     echo " --bridge-eth-gateway   Default gateway to set for the bridge"
     echo " --bridge-eth-mac       MAC Address to apply to the bridge interface"
@@ -186,7 +186,6 @@ OVPN_BR_BR=''
 OVPN_BR_ETH_IF=''
 OVPN_BR_ETH_IP=''
 OVPN_BR_ETH_SUBNET=''
-OVPN_BR_ETH_BROADCAST=''
 OVPN_BR_ETH_GATEWAY=''
 OVPN_BR_ETH_MAC=''
 OVPN_BR_DHCP_START=''
@@ -339,7 +338,7 @@ do
             ;;
         --bridge-eth-broadcast)
             shift
-            OVPN_BR_ETH_BROADCAST="$1"
+            echo "WARNING: --bridge-eth-broadcast is deprecated, remove from call!"
             ;;
         --bridge-eth-gateway)
             shift
