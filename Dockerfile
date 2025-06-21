@@ -3,7 +3,7 @@
 # Tertiary credit for TAP/bridge adjusments: https://github.com/aktur/docker-openvpn
 
 # Smallest base image
-FROM alpine:3.21
+FROM alpine:3.22
 
 LABEL maintainer="Salvoxia <salvoxia@blindfish.info>"
 
