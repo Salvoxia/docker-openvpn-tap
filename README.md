@@ -62,16 +62,15 @@ Unlike the image this is based on, it is not tested extensively with different n
 This image has been modified to work with tap mode and support network bridging out-of-the-box.
 You must start the container with host networking mode.
 
-### ⚠️ __Caution:__ 
-
-Bridge mode is __not__ compatible with NetworkManager running on the host. The container creates a network bridge on the host, bridging the interface you specify and updating routing tables accordingly.  
-If the network interface you want to bridge is managed by NetworkManager, it will interfere with the routing tables and eventually render your host unreachable over the network!  
-NetworkManager provides [various VPN plugins](https://wiki.gnome.org/Projects/NetworkManager/VPN) for direct VPN support.  
-If you still want to use this image, you must disable NetworkManager for the network device you want to bridge.
-Assuming that device is called `eth0`, you can set the device to "unmanaged" like this:
-```bash
-nmcli device set eth0 managed no
-```
+>[!CAUTION]  
+>Bridge mode is __not__ compatible with NetworkManager running on the host. The container creates a network bridge on the host, bridging the interface you specify and updating routing tables accordingly.  
+>If the network interface you want to bridge is managed by NetworkManager, it will interfere with the routing tables and eventually render your host unreachable over the network!  
+>NetworkManager provides [various VPN plugins](https://wiki.gnome.org/Projects/NetworkManager/VPN) for direct VPN support.  
+>If you still want to use this image, you must disable NetworkManager for the network device you want to bridge.
+>Assuming that device is called `eth0`, you can set the device to "unmanaged" like this:
+>```bash
+>nmcli device set eth0 managed no
+>```
 
 ## Configuring the container for TAP mode
 
@@ -84,26 +83,26 @@ nmcli device set eth0 managed no
   * To set up a server using tap and bridging, use the `-B` argument when creating the configuration. You must supply all bridge-related arguments as well:
     ```bash
     docker run -v $OVPN_DATA:/etc/openvpn --rm salvoxia/openvpn-tap \
-      ovpn_genconfig \
-          -u udp://VPN.SERVERNAME.COM:PORT \  # Your public IP/domain and port forwarded to Docker
-          -t \                                 # Enable TAP mode
-          -B \                                # Enable bridging mode
-          --bridge-name 'br0' \               # Bridge interface name (change it if br0 already exists)
-          --bridge-eth-if 'eth0' \            # Host network interface to bridge with
-          --bridge-eth-ip '192.168.0.199' \   # Static IP of your Docker host
-          --bridge-eth-subnet '255.255.255.0' \  # Subnet mask of your Docker host, no need to change for most cases
-          --bridge-eth-gateway '192.168.0.1' \      # Your router's IP address, or gateway IP
-          --bridge-eth-mac 'b8:32:ac:8b:17:2e' \    # MAC address for bridge interface, could be the same as the host interface or a random one
-          --bridge-dhcp-start '192.168.0.200' \     # Start of VPN client IP range
-          --bridge-dhcp-end '192.168.0.220'         # End of VPN client IP range
+    ovpn_genconfig \
+      -u udp://VPN.SERVERNAME.COM:1194     `# Your public IP/domain and port forwarded to Docker` \
+      -t                                   `# Enable TAP mode` \
+      -B                                   `# Enable bridging mode` \
+      --bridge-name 'br0'                  `# Bridge interface name (change it if br0 already exists)` \
+      --bridge-eth-if 'eth0'               `# Host network interface to bridge with` \
+      --bridge-eth-ip '192.168.0.199'      `# Static IP of your Docker host` \
+      --bridge-eth-subnet '255.255.255.0'  `# Subnet mask of your Docker host, no need to change for most cases` \
+      --bridge-eth-gateway '192.168.0.1'   `# Your router's IP address, or gateway IP` \
+      --bridge-eth-mac 'b8:32:ac:8b:17:2e' `# MAC address for bridge interface, could be the same as the host interface or a random one` \
+      --bridge-dhcp-start '192.168.0.200'  `# Start of VPN client IP range` \
+      --bridge-dhcp-end '192.168.0.220'    `# End of VPN client IP range`
     ```
-    ⚠️ __Caution__: Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
-
     If a bridge with the provided name already exists, the container will simply use that. If the host network interface (`--bridge-eth-if`) is already part of that bridge, the container will leave the bridge alone on startup and shutdown. In that case, the following arguments do not have any effect:
       - `--bridge-eth-ip`
       - `--bridge-eth-subnet`
       - `--bridge-eth-gateway`
       - `--bridge-eth-mac`
+>[!CAUTION]
+>Choosing the wrong bridge argument values may render your host machine unreachable over the network! Make sure to have direct access or choose wisely!
 
   * Create certificates for generating clients:
     ```bash
