@@ -12,13 +12,11 @@
     {
       "customType": "regex",
       "fileMatch": ["(^|/)Dockerfile$"],
-      "matchStringsStrategy": "combination",
       "matchStrings": [
-        "(?:^|\\n)FROM alpine:(?<alpineVer>[0-9]+\\.[0-9]+)(?:@[a-zA-Z0-9:]+)?",
-        "(?:apk add|\\s)(?<depName>[a-zA-Z0-9_-]+)=(?<currentValue>[0-9][a-zA-Z0-9.-]+)"
+        "\\bapk add\\b[\\s\\S]*?\\s(?<depName>[a-zA-Z0-9_-]+)=(?<currentValue>[0-9][a-zA-Z0-9.-]+)"
       ],
       "datasourceTemplate": "repology",
-      "depNameTemplate": "alpine_{{replace '.' '_' alpineVer}}/{{depName}}",
+      "depNameTemplate": "alpine_3_24/{{{depName}}}",
       "versioningTemplate": "loose"
     }
   ]
