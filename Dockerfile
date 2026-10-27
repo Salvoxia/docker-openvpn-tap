@@ -3,13 +3,13 @@
 # Tertiary credit for TAP/bridge adjusments: https://github.com/aktur/docker-openvpn
 
 # Smallest base image
-FROM alpine:3.24
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
 
 LABEL maintainer="Salvoxia <salvoxia@blindfish.info>"
 
 # Testing: pamtester
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories && \
-    apk add --update openvpn=2.7.3-r0 iptables curl bash easy-rsa openvpn-auth-pam google-authenticator pamtester libqrencode && \
+    apk add --update openvpn=2.7.7-r0 iptables=1.8.13-r0 curl=8.23.0-r0 bash=5.3.9-r1 easy-rsa=3.2.5-r0 openvpn-auth-pam=2.7.7-r0 google-authenticator=1.11-r0 pamtester libqrencode=4.1.1-r3 && \
     ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin && \
     rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/*
 
