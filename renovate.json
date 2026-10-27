@@ -12,9 +12,9 @@
     {
       "customType": "regex",
       "fileMatch": ["(^|/)Dockerfile$"],
-      "matchStringsStrategy": "nested",
+      "matchStringsStrategy": "recursive",
       "matchStrings": [
-        "FROM alpine:(?<alpineVer>[0-9]+\\.[0-9]+)(?:@[a-zA-Z0-9:]+)?(?<remainingContent>[\\s\\S]*)",
+        "FROM alpine:(?<alpineVer>[0-9]+\\.[0-9]+)(?:@[a-zA-Z0-9:]+)?[\\s\\S]*",
         "(?:apk add|\\s)(?<depName>[a-zA-Z0-9_-]+)=(?<currentValue>[0-9][a-zA-Z0-9.-]+)"
       ],
       "datasourceTemplate": "repology",
