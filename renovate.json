@@ -10,14 +10,12 @@
   ],
   "customManagers": [
     {
-      "description": "Update APK packages in Dockerfile RUN statements (HEREDOC and traditional)",
+      "description": "Update APK packages in Dockerfile RUN statements with HEREDOC",
       "customType": "regex",
       "fileMatch": ["^Dockerfile$", "^Dockerfile\\.[^/]*$"],
-      "matchStringsStrategy": "recursive",
       
       "matchStrings": [
-        "RUN\\s+(?:<<[A-Z]+\\s+(?:bash|sh)?\\s*)?apk\\s+add[^\\n\\\\]*(?:\\\\[^\\S\\n]*\\n[^\\n\\\\]*)*",
-        "(?<depName>[a-z0-9][a-z0-9._+-]*)=(?<currentValue>\\d+[^\\s\\\\]+)"
+        "apk\\s+add\\s+(?:--[^\\s]+\\s+)*(?<depName>[a-z0-9][a-z0-9._+-]*)=(?<currentValue>\\d+[^\\s]*)(?:\\s|$)"
       ],
       
       "datasourceTemplate": "apk",
