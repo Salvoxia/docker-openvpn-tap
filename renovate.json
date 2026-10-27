@@ -13,7 +13,7 @@
       "customType": "regex",
       "fileMatch": ["(^|/)Dockerfile$"],
       "matchStrings": [
-        "(?:apk add|\\s)(?<depName>[a-zA-Z0-9_-]+)=(?<currentValue>[0-9][a-zA-Z0-9.-]+)(?=[^\\n]*)"
+        "(?:^|\\n)[^#\\n]*?\\s(?<depName>[a-zA-Z0-9_-]+)=(?<currentValue>[0-9][a-zA-Z0-9.-]+)"
       ],
       "datasourceTemplate": "repology",
       "depNameTemplate": "alpine_3_24/{{{depName}}}",
