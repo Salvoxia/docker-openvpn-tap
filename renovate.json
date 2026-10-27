@@ -10,14 +10,11 @@
   ],
   "customManagers": [
     {
-      "description": "Update APK packages in Dockerfile RUN statements with HEREDOC",
       "customType": "regex",
-      "fileMatch": ["^Dockerfile$", "^Dockerfile\\.[^/]*$"],
-      
+      "fileMatch": ["Dockerfile"],
       "matchStrings": [
-        "apk\\s+add\\s+(?:--[^\\s]+\\s+)*(?<depName>[a-z0-9][a-z0-9._+-]*)=(?<currentValue>\\d+[^\\s]*)(?:\\s|$)"
+        "apk\\s+add\\s+.*?(?<depName>openvpn|iptables|curl|bash)=(?<currentValue>[^\\s]+)"
       ],
-      
       "datasourceTemplate": "apk",
       "versioningTemplate": "apk"
     }
