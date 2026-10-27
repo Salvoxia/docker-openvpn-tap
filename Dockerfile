@@ -10,7 +10,15 @@ LABEL maintainer="Salvoxia <salvoxia@blindfish.info>"
 # Testing: pamtester
 RUN <<EOT
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories
-    apk add --update openvpn=2.7.7-r0 iptables=1.8.13-r0 curl=8.23.0-r0 bash=5.3.9-r1 easy-rsa=3.2.5-r0 openvpn-auth-pam=2.7.7-r0 google-authenticator=1.11-r0 pamtester libqrencode=4.1.1-r3
+    apk add --update openvpn=2.7.7-r0
+    apk add --update iptables=1.8.13-r0
+    apk add --update curl=8.23.0-r0
+    apk add --update bash=5.3.9-r1
+    apk add --update easy-rsa=3.2.5-r0
+    apk add --update openvpn-auth-pam=2.7.7-r0
+    apk add --update google-authenticator=1.11-r0
+    apk add --update libqrencode=4.1.1-r3
+    apk add --update pamtester
     ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin
     rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/*
 EOT
