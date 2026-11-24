@@ -10,7 +10,7 @@ LABEL maintainer="Salvoxia <salvoxia@blindfish.info>"
 # Testing: pamtester
 RUN <<EOT
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories
-    apk add --update openvpn=2.7.7-r0
+    apk add --update openvpn=2.7.9-r0
     apk add --update iptables=1.8.13-r0
     apk add --update curl=8.23.0-r0
     apk add --update bash=5.3.9-r1
