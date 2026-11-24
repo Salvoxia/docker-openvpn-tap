@@ -15,7 +15,7 @@ RUN <<EOT
     apk add --update curl=8.23.0-r0
     apk add --update bash=5.3.9-r1
     apk add --update easy-rsa=3.2.5-r0
-    apk add --update openvpn-auth-pam=2.7.7-r0
+    apk add --update openvpn-auth-pam=2.7.9-r0
     apk add --update google-authenticator=1.11-r0
     apk add --update libqrencode=4.1.1-r3
     apk add --update pamtester
